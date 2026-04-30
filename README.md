@@ -8,33 +8,6 @@ https://ggthedeveloper.github.io/YatraApp-Trip-Planner/
 
 ---
 
-## ✨ Features
-
-- 🧭 **Multi-City Travel Planning**  
-  Explore destinations like Delhi, Jaipur, Mumbai, Varanasi, Kerala, and Goa
-
-- ⚙️ **Smart Itinerary Optimization**  
-  Uses a **0/1 Knapsack algorithm** to optimize travel plans based on:
-  - Time constraints
-  - Budget limits
-
-- 🗺️ **Interactive Map Integration**  
-  Visualize locations using **Leaflet.js**
-
-- 🧠 **AI-Inspired Travel Tips**  
-  Get helpful suggestions for attractions
-
-- 👤 **User Profile System**  
-  - Save trips locally using `localStorage`
-  - Manage preferences (name, theme, saved trips)
-
-- 💾 **Save & Load Trips**  
-  Easily store and revisit your travel plans
-
-- 🌙 **Dark Mode Support**  
-  Clean and responsive UI across themes
-
----
 ## 🧠 Algorithm & Optimization Approach
 
 YatraApp uses a **smart optimization technique** to generate the best travel itinerary based on user constraints.
@@ -66,6 +39,36 @@ Users get:
 - A **balanced itinerary**
 - Maximum utilization of time and budget
 - Intelligent selection of places instead of random planning
+
+---
+
+## ✨ Features
+
+- 🧭 **Multi-City Travel Planning**  
+  Explore destinations like Delhi, Jaipur, Mumbai, Varanasi, Kerala, and Goa
+
+- ⚙️ **Smart Itinerary Optimization**  
+  Uses a **0/1 Knapsack algorithm** to optimize travel plans based on:
+  - Time constraints
+  - Budget limits
+
+- 🗺️ **Interactive Map Integration**  
+  Visualize locations using **Leaflet.js**
+
+- 🧠 **AI-Inspired Travel Tips**  
+  Get helpful suggestions for attractions
+
+- 👤 **User Profile System**  
+  - Save trips locally using `localStorage`
+  - Manage preferences (name, theme, saved trips)
+
+- 💾 **Save & Load Trips**  
+  Easily store and revisit your travel plans
+
+- 🌙 **Dark Mode Support**  
+  Clean and responsive UI across themes
+
+---
 
 ## 🛠️ Tech Stack
 
