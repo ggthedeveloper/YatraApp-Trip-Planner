@@ -1,7 +1,8 @@
 # YatraApp Trip Planner
 
-A lightweight, client-side trip planner for India built with HTML, CSS, and JavaScript.
+#### A lightweight, client-side trip planner for India built with HTML, CSS, and JavaScript.
 
+Live at: https://ggthedeveloper.github.io/YatraApp-Trip-Planner/
 ## Features
 
 - 5 city destinations: Delhi, Jaipur, Mumbai, Varanasi, Kerala, plus Goa in the hero section
@@ -17,20 +18,6 @@ A lightweight, client-side trip planner for India built with HTML, CSS, and Java
 - `index.html` — application shell and markup
 - `style.css` — visual styling and responsive layout
 - `script.js` — app logic, authentication, optimizer, map, and UI behavior
-
-## Getting Started
-
-1. Open `index.html` in a browser, or serve the project with a local static server:
-   ```bash
-   python3 -m http.server 8000
-   ```
-2. Open `http://localhost:8000` in your browser.
-
-## Demo Screenshot
-
-![YatraApp preview](https://raw.githubusercontent.com/ggthedeveloper/YatraApp-Trip-Planner/main/screenshot.png)
-
-> If you want, replace this image link with your own screenshot file in the repo and reference it here.
 
 ## Deployment
 
