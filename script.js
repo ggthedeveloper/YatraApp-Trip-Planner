@@ -50,30 +50,39 @@ const CITIES = {
       {id:"jp1",name:"Amber Fort",time:4,cost:550,score:99,cat:"Heritage",lat:26.9855,lng:75.8513,
        desc:"Magnificent 16th-century hillfort by Raja Man Singh. Sheesh Mahal mirror hall, elephant rides, light & sound show.",
        img:"https://plus.unsplash.com/premium_photo-1661963054563-ce928e477ff3?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp2",name:"Hawa Mahal",time:1,cost:100,score:88,cat:"Heritage",lat:26.9239,lng:75.8267,
        desc:"1799 Palace of Winds with 953 latticed windows. Built for royal women to observe street life unseen. Jaipur's iconic facade.",
        img:"https://images.unsplash.com/photo-1650530777057-3a7dbc24bf6c?q=80&w=1002&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp3",name:"City Palace",time:2,cost:700,score:92,cat:"Heritage",lat:26.9258,lng:75.8237,
        desc:"Royal complex blending Mughal and Rajput styles. Mubarak Mahal, Chandra Mahal, costumes, royal armoury.",
        img:"https://images.unsplash.com/photo-1667099639128-4b10f464f4a2?q=80&w=1746&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp4",name:"Jantar Mantar",time:1,cost:200,score:85,cat:"UNESCO",lat:26.9246,lng:75.8243,
        desc:"1734 astronomical observatory with world's largest stone sundial. 19 instruments still accurate today. UNESCO site.",
        img:"https://plus.unsplash.com/premium_photo-1697730309688-cc2a3a573494?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp5",name:"Nahargarh Fort",time:2,cost:200,score:89,cat:"Scenic",lat:26.9444,lng:75.8150,
        desc:"18th-century fort on Aravalli Hills. Panoramic Jaipur cityscape. Spectacular sunset viewpoint.",
        img:"https://images.unsplash.com/photo-1648217516771-74a081268aac?q=80&w=746&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp6",name:"Jal Mahal",time:1,cost:0,score:80,cat:"Scenic",lat:26.9528,lng:75.8325,
        desc:"18th-century palace floating on Man Sagar Lake. Mughal-Rajput blend. Best photographed from the lakeside.",
        img:"https://images.unsplash.com/photo-1661924326425-c14a6426d989?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp7",name:"Albert Hall Museum",time:2,cost:150,score:76,cat:"Culture",lat:26.9042,lng:75.8198,
        desc:"1887 Indo-Saracenic museum. Egyptian mummy, miniature paintings, decorative arts. Illuminated beautifully at night.",
        img:"https://plus.unsplash.com/premium_photo-1691031429594-83d6103ec104?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp8",name:"Chokhi Dhani",time:3,cost:1200,score:84,cat:"Culture",lat:26.7893,lng:75.7893,
        desc:"Authentic Rajasthani village resort. Folk dance, camel rides, puppet shows, fire acts, traditional thali dinner.",
        img:"https://chokhidhani.com/village-fair-restaurant-jaipur/wp-content/uploads/elementor/thumbs/Slider-2-qkiqnz3odzoejwd9ouup98z3m8iqnrl9eqidd8r6s0.jpg"},
+       
       {id:"jp9",name:"Galtaji Temple",time:2,cost:100,score:79,cat:"Spiritual",lat:26.9009,lng:75.8764,
        desc:"7th-century pilgrimage site with natural springs. Hundreds of monkeys roam freely. Hidden in Aravalli hills.",
        img:"https://plus.unsplash.com/premium_photo-1691031429261-aeb324882888?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"jp10",name:"Johari Bazaar",time:2,cost:800,score:78,cat:"Shopping",lat:26.9195,lng:75.8243,
        desc:"Jaipur's jewellery hub. Kundan, meenakari, gemstones. Also famed for Bandhani fabric, blue pottery, lac bangles.",
        img:"https://images.unsplash.com/photo-1606837731832-99e78287e7b9?q=80&w=1710&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
@@ -84,30 +93,39 @@ const CITIES = {
       {id:"mb1",name:"Elephanta Caves",time:4,cost:700,score:94,cat:"UNESCO",lat:18.9633,lng:72.9315,
        desc:"5th-century rock-cut Shiva temples on Elephanta Island. 1hr ferry from Gateway. UNESCO World Heritage Site.",
        img:"https://plus.unsplash.com/premium_photo-1697730348607-38bab9f149bd?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"mb2",name:"Gateway of India",time:1,cost:0,score:85,cat:"Landmark",lat:18.9220,lng:72.8347,
        desc:"1924 colonial basalt arch on Apollo Bunder. Last British troops departed India through this gate in 1948.",
        img:"https://images.unsplash.com/photo-1570168007204-dfb528c6958f?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"mb3",name:"CSMVS Museum",time:2,cost:200,score:88,cat:"Culture",lat:18.9267,lng:72.8325,
        desc:"Indo-Saracenic masterpiece housing 50,000+ artefacts spanning 5,000 years of Indian civilization.",
        img:"https://culture360.asef.org/media/2023/8/CSMVS.jpg"},
+       
       {id:"mb4",name:"Dharavi Walk",time:2,cost:1500,score:86,cat:"Experience",lat:19.0404,lng:72.8535,
        desc:"Guided tour of Asia's largest informal economy. Thriving leather, pottery and recycling industries. Eye-opening.",
        img:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Dharavi_India.jpg/1280px-Dharavi_India.jpg"},
+       
       {id:"mb5",name:"Bollywood Studio",time:3,cost:2000,score:89,cat:"Culture",lat:19.1688,lng:72.8436,
        desc:"Film City behind-the-scenes. Live sets, costumes, props. India produces 1,000+ films annually here.",
        img:"https://media-cdn.tripadvisor.com/media/attractions-splice-spp-674x446/07/bb/44/86.jpg"},
+       
       {id:"mb6",name:"Marine Drive",time:1,cost:0,score:80,cat:"Scenic",lat:18.9440,lng:72.8236,
        desc:"3.6km Queen's Necklace. Art Deco buildings, iconic skyline, Arabian Sea breeze at dusk. Free.",
        img:"https://images.unsplash.com/photo-1682414593649-c3e4024a7995?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"mb7",name:"Siddhivinayak Temple",time:1,cost:0,score:81,cat:"Spiritual",lat:19.0161,lng:72.8302,
        desc:"One of India's richest temples. Black stone Ganesh idol with trunk turned right. Bollywood celebrities flock here.",
        img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwXUM0OHnYMSqA16vcrrH-7BIzpt0o2zh7sw&s.jpg"},
+       
       {id:"mb8",name:"Haji Ali Dargah",time:1,cost:0,score:82,cat:"Spiritual",lat:18.9827,lng:72.8092,
        desc:"1431 mosque and dargah on a tidal islet 500m offshore. Accessible only at low tide. Qawwali music evenings.",
        img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS49-EZwfxTFUpaKL1B9m9-RrGvGeFw3LgEig&s.jpg"},
+       
       {id:"mb9",name:"Colaba Causeway",time:2,cost:600,score:74,cat:"Shopping",lat:18.9150,lng:72.8290,
        desc:"Vibrant street market. Antiques, silver jewellery, leather bags. Leopold Cafe — a Mumbaikar institution — is nearby.",
        img:"https://traveleva.gumlet.io/activities/1954/1954_colaba-causeway.jpg?w=1244&h=312.jpg"},
+       
       {id:"mb10",name:"Juhu Beach",time:1,cost:100,score:72,cat:"Food",lat:19.0974,lng:72.8268,
        desc:"Famous for vada pav, bhel puri, pani puri. Bollywood neighbourhood. Beautiful Arabian Sea sunset views.",
        img:"https://visitplacesindia.com/wp-content/uploads/2024/11/juhu-beach-mumbaidd.jpg"},
@@ -118,30 +136,39 @@ const CITIES = {
       {id:"vr1",name:"Dashashwamedh Aarti",time:2,cost:0,score:99,cat:"Spiritual",lat:25.3063,lng:83.0126,
        desc:"Nightly Ganga fire ritual. Priests perform synchronized aarti with brass lamps, incense and chants. Unmissable.",
        img:"https://images.bhaskarassets.com/thumb/730x0/web2images/521/2023/12/31/e6ab8239-17aa-4e66-b6fd-817e762fdfdb_1704039408563.jpg"},
+       
       {id:"vr2",name:"Sunrise Boat Ride",time:2,cost:500,score:97,cat:"Experience",lat:25.3100,lng:83.0130,
        desc:"Row boat at dawn past 88 ghats. Bathing rituals, floating diyas, fog, bells and chants — otherworldly.",
        img:"https://images.unsplash.com/photo-1677047760488-3cb44e916553?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"vr3",name:"Kashi Vishwanath",time:2,cost:0,score:94,cat:"Spiritual",lat:25.3109,lng:83.0107,
        desc:"Holiest Shiva temple, one of 12 Jyotirlingas. Golden spire by Maharaja Ranjit Singh. Rebuilt 1780.",
        img:"https://kashi.gov.in/cmsadmin/getApiFile/CMS/68c3e3daadb281757668314~jpg"},
+       
       {id:"vr4",name:"Sarnath",time:3,cost:200,score:91,cat:"Heritage",lat:25.3814,lng:83.0241,
        desc:"Where Buddha gave his first sermon after enlightenment. Dhamek Stupa, Ashoka Pillar, archaeological museum.",
        img:"https://www.tripsavvy.com/thmb/nAutKnpCRkUPxY7awFfAzQEkz-k=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-11277274181-f11cfdb1a6514121aa39eea112917faf.jpg"},
+       
       {id:"vr5",name:"Manikarnika Ghat",time:1,cost:0,score:88,cat:"Spiritual",lat:25.3103,lng:83.0109,
        desc:"Holiest cremation ghat, fires burning continuously for 3,500 years. Hindus believe dying here grants moksha.",
        img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTwtL4ypCAEpRwQcbVGJBUjkSw6Gq8rx2t_ug&s.jpg"},
+       
       {id:"vr6",name:"Assi Ghat at Dawn",time:1,cost:0,score:84,cat:"Wellness",lat:25.2988,lng:83.0022,
        desc:"Southernmost major ghat. Morning yoga, meditation, Puja. More relaxed than northern ghats. Scholar's corner.",
        img:"https://live.staticflickr.com/7526/15609742464_e37ae8cf1e_b.jpg"},
+       
       {id:"vr7",name:"Silk Weaving Workshop",time:2,cost:200,score:80,cat:"Craft",lat:25.3200,lng:83.0100,
        desc:"Banarasi silk 2,000 years old. Watch master weavers on handlooms. UNESCO Intangible Cultural Heritage.",
        img:"https://images.unsplash.com/photo-1597371140946-cfd3dd5a76b9?q=80&w=1786&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"vr8",name:"Classical Music Evening",time:2,cost:500,score:83,cat:"Culture",lat:25.3150,lng:83.0050,
        desc:"Varanasi is India's classical music capital. Evening raga concerts — sitar, santoor, tabla near the ghats.",
        img:"https://media-cdn.tripadvisor.com/media/attractions-splice-spp-674x446/14/90/69/77.jpg"},
+       
       {id:"vr9",name:"BHU Campus",time:2,cost:0,score:78,cat:"Culture",lat:25.2677,lng:82.9914,
        desc:"Banaras Hindu University, 1,400-acre campus founded 1916. Own Vishwanath temple. Bharat Kala Bhavan museum.",
        img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSp4Kr05jGh6jt0Y4SuZjQzYjRxaO3EZ1p7g&s.jpg"},
+       
       {id:"vr10",name:"Old City Food Walk",time:1,cost:200,score:79,cat:"Food",lat:25.3120,lng:83.0080,
        desc:"Kashi lassi, Banarasi paan, thandai, malaiyyo in winter. Centuries-old sweet shops in winding old-city lanes.",
        img:"https://media1.thrillophilia.com/filestore/ps09ksoqcuyocrbiy8yg8dmcghvr_1569587550_shutterstock_1090664156.jpg"},
@@ -152,30 +179,38 @@ const CITIES = {
       {id:"kl1",name:"Alleppey Houseboat",time:5,cost:5000,score:99,cat:"Experience",lat:9.4981,lng:76.3388,
        desc:"Cruise Kerala's 900km backwater network on a traditional kettuvallam. Paddy fields, coconut groves, village life.",
        img:"https://plus.unsplash.com/premium_photo-1697729438401-fcb4ff66d9a8?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"kl2",name:"Munnar Tea Gardens",time:4,cost:300,score:96,cat:"Nature",lat:10.0889,lng:77.0595,
        desc:"1,700m high Western Ghats plantations. Endless green carpet of tea. Cool mist mornings in Cardamom Hills.",
        img:"https://plus.unsplash.com/premium_photo-1697730314165-2cd71dc3a6a4?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"kl3",name:"Periyar Wildlife Safari",time:5,cost:700,score:94,cat:"Wildlife",lat:9.5167,lng:77.1833,
        desc:"Boat safari on Periyar Lake. Elephants, gaur, sambar deer at water's edge. Tiger Reserve dense jungle.",
        img:"https://media1.thrillophilia.com/filestore/zcmnhidaurkgxp39582ywz036yk3_Periyar%20National%20Park.jpg?w=400&dpr=2.jpg"},
+       
       {id:"kl4",name:"Kathakali Performance",time:2,cost:400,score:91,cat:"Culture",lat:9.9312,lng:76.2673,
        desc:"2,000-year-old classical dance-drama. Elaborate face paint, expressive eye movements. Stories from Ramayana.",
        img:"https://images.unsplash.com/photo-1691075211492-05c1800397a2?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"kl5",name:"Padmanabhaswamy Temple",time:2,cost:0,score:92,cat:"Spiritual",lat:8.4828,lng:76.9462,
        desc:"World's wealthiest temple. 5.5m reclining Vishnu idol. Treasury estimated at $22 billion. Travancore royals.",
        img:"https://images.unsplash.com/photo-1644773182204-f0bf03cae0cb?q=80&w=1548&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"kl6",name:"Ayurvedic Spa",time:2,cost:1500,score:89,cat:"Wellness",lat:10.0,lng:76.25,
        desc:"Traditional Panchakarma treatments. Shirodhara, Abhyangam. Kerala — birthplace of Ayurveda. 3,000 years old.",
        img:".jpg"},
       {id:"kl7",name:"Kovalam Beach",time:3,cost:200,score:85,cat:"Nature",lat:8.3988,lng:76.9782,
        desc:"Three crescent beaches with iconic lighthouse. Surfing, Ayurvedic massage on shore, seafood restaurants.",
        img:"https://www.keralatourism.org/_next/image/?url=http%3A%2F%2F127.0.0.1%2Fktadmin%2Fimg%2Fpages%2Ftablet%2Fkovalam-beach-1728485231_0ea3611f4ad1209cd58a.webp&w=1920&q=75.jpg"},
+       
       {id:"kl8",name:"Fort Kochi Walk",time:2,cost:0,score:83,cat:"Heritage",lat:9.9644,lng:76.2426,
        desc:"Portuguese, Dutch and British colonial quarter. Jew Town, St Francis Church, Chinese fishing nets, spice bazaars.",
        img:"https://www.fortekochi.in/images/bg.jpg"},
+       
       {id:"kl9",name:"Spice Plantation Tour",time:3,cost:500,score:82,cat:"Experience",lat:9.78,lng:77.05,
        desc:"Cardamom, black pepper, coffee, vanilla plantations in Wayanad. Learn India's ancient spice trade history.",
        img:"https://kochivillagetour.com/wp-content/uploads/2024/07/spices-kerala-2.jpg"},
+       
       {id:"kl10",name:"Chinese Fishing Nets",time:1,cost:0,score:76,cat:"Scenic",lat:9.9658,lng:76.2414,
        desc:"Cantilever nets from Kublai Khan's court, operating since 1400s. Iconic symbol of Fort Kochi waterfront.",
        img:"https://theholidaysdestination.com/wp-content/uploads/2022/02/Chinese-Fishing-Net.jpg"},
@@ -185,22 +220,27 @@ const CITIES = {
     attractions:[
       {id:"ga1",name:"Baga Beach",time:2,cost:0,score:90,cat:"Beach",lat:15.5608,lng:73.7559,
        desc:"Lively beach with water sports, shacks, nightlife. Parasailing, jet skiing, beach parties. Free entry.",
-       img:"https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       img:"https://plus.unsplash.com/premium_photo-1697729701846-e34563b06d47?q=80&w=1548&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"ga2",name:"Basilica of Bom Jesus",time:1,cost:0,score:88,cat:"Heritage",lat:15.5935,lng:73.8229,
        desc:"UNESCO World Heritage 1605 church housing St Francis Xavier's relics. Baroque architecture with gilded altars.",
-       img:"https://images.unsplash.com/photo-1568605114967-8130f3a36994?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       img:"https://images.unsplash.com/photo-1706940119676-957a79a61248?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"ga3",name:"Dudhsagar Falls",time:4,cost:300,score:92,cat:"Nature",lat:15.3142,lng:74.3136,
        desc:"Majestic 310m waterfall in Bhagwan Mahavir Wildlife Sanctuary. Best during monsoon. Jeep safari or trek access.",
-       img:"https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D}%3D.jpg"},
+       img:"https://static.toiimg.com/thumb/resizemode-4,width-1280,height-720,msid-121561122/121561122.jpg"},
+       
       {id:"ga4",name:"Anjuna Flea Market",time:2,cost:0,score:85,cat:"Shopping",lat:15.6030,lng:73.7479,
        desc:"Every Wednesday. Hippie vibe with clothes, jewellery, handicrafts, souvenirs. Live music, food stalls. Bargain for unique findings. Free entry.",
-       img:"https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.10&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       img:"https://www.tourmyindia.com/states/goa/image/anjuna-flea-market-goa.webp.jpg"},
+       
       {id:"ga5",name:"Fort Aguada",time:1,cost:0,score:80,cat:"Heritage",lat:15.4909,lng:73.7714,
        desc:"17th-century Portuguese fort with panoramic Arabian Sea views. Lighthouse, dungeons, and a small beach.",
-       img:"https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       img:"https://images.unsplash.com/photo-1702890761067-4d6fdb0abced?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"},
+       
       {id:"ga6",name:"Spice Plantation Tour",time:3,cost:500,score:82,cat:"Experience",lat:15.4000,lng:74.0000,
        desc:"Kerala-style tour of pepper, cardamom, vanilla plantations. Learn about Goa's spice trade history. Tasting sessions included.",
-       img:"https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"} 
+       img:"https://images.unsplash.com/photo-1674125880895-c3a509d61602?q=80&w=1548&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D.jpg"} 
     ]
   }
 };
