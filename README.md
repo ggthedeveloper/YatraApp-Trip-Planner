@@ -101,20 +101,6 @@ YatraApp-Trip-Planner/
 
 ---
 
-## 🌐 Deployment
-
-This is a **fully static project**, so deployment is simple:
-
-### Using GitHub Pages:
-1. Go to repository **Settings**  
-2. Navigate to **Pages**  
-3. Select:
-   - Branch: `main`  
-   - Folder: `/root`  
-4. Save and access your live site  
-
----
-
 ## 🎯 Future Improvements
 
 - Backend integration (user authentication & cloud storage)  
