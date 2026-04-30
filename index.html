@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>YatraApp(Trip Planner) — Plan India, Perfectly</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav">
+  <div class="nav-logo" onclick="showHero()">
+    <div class="nav-logo-mark"><i class="fas fa-route"></i></div>
+    Yatra<em>AI</em>
+  </div>
+  <div class="nav-divider"></div>
+  <span class="nav-tag">0/1 Knapsack · DP Optimizer</span>
+  <button class="nbtn nbtn-o" onclick="toggleTheme()">
+    <i class="fas fa-moon"></i>
+  </button>
+  <div class="nav-right" id="navAuth">
+    <button class="nbtn nbtn-o" onclick="openGate('login')">Sign In</button>
+    <button class="nbtn nbtn-f" onclick="openGate('reg')">Get Started</button>
+  </div>
+  <div class="nav-right" id="navUser" style="display:none">
+    <div class="nav-avatar" id="navAv" onclick="openProfile()" style="cursor:pointer"></div>
+    <span class="nav-uname" id="navUname" onclick="openProfile()" style="cursor:pointer"></span>
+    <button class="nbtn nbtn-o" onclick="logout()" style="margin-left:4px"><i class="fas fa-sign-out-alt"></i></button>
+  </div>
+</nav>
+
+<!-- ═══════════ AUTH GATE (shown before entering) ═══════════ -->
+<div class="ov" id="gateOv">
+  <div class="gate">
+    <!-- Left brand -->
+    <div class="gate-left">
+      <div class="gl-mark"><i class="fas fa-route"></i></div>
+      <div class="gl-name">Yatra<em>App</em></div>
+      <div class="gl-sub">Plan India<br>Perfectly</div>
+      <div class="gl-list">
+        <div class="gl-item"><i class="fas fa-bolt"></i>DP Optimised Itinerary</div>
+        <div class="gl-item"><i class="fas fa-map-marker-alt"></i>5 Indian Cities</div>
+        <div class="gl-item"><i class="fas fa-brain"></i>Insider Tips</div>
+        <div class="gl-item"><i class="fas fa-rupee-sign"></i>Budget in Rupees</div>
+        <div class="gl-item"><i class="fas fa-bookmark"></i>Save Your Trips</div>
+      </div>
+    </div>
+    <!-- Right forms -->
+    <div class="gate-right">
+      <button class="gate-close" onclick="closeGate()"><i class="fas fa-times"></i></button>
+      <div class="gate-tabs">
+        <button class="gtab on" id="gTabLogin" onclick="gateTab('login')">Sign In</button>
+        <button class="gtab" id="gTabReg" onclick="gateTab('reg')">Register</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="gform on" id="gFormLogin">
+        <div class="form-title">Welcome back</div>
+        <div class="form-sub">Sign in to start planning your yatra</div>
+        <div class="fg">
+          <label class="fl">Email Address</label>
+          <input class="fi" id="gEmail" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="fi-wrap">
+            <input class="fi" id="gPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doGateLogin()" style="padding-right:40px">
+            <button class="fi-eye" onclick="togglePwd('gPass',this)" tabindex="-1"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="ferr" id="gErr"></div>
+        <button class="bfull bsf" id="gLoginBtn" onclick="doGateLogin()">
+          <i class="fas fa-sign-in-alt"></i> Sign In
+        </button>
+        <div class="form-switch">Don't have an account? <a onclick="gateTab('reg')">Create one free</a></div>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="gform" id="gFormReg">
+        <div class="form-title">Create Account</div>
+        <div class="form-sub">Join and explore India's best experiences</div>
+        <div class="fg">
+          <label class="fl">Full Name</label>
+          <input class="fi" id="gName" type="text" placeholder="Arjun Sharma" autocomplete="name">
+        </div>
+        <div class="fg">
+          <label class="fl">Email Address</label>
+          <input class="fi" id="gRegEmail" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="fi-wrap">
+            <input class="fi" id="gRegPass" type="password" placeholder="Min 6 characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')doGateReg()" style="padding-right:40px">
+            <button class="fi-eye" onclick="togglePwd('gRegPass',this)" tabindex="-1"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="ferr" id="gRegErr"></div>
+        <button class="bfull bsf" id="gRegBtn" onclick="doGateReg()">
+          <i class="fas fa-user-plus"></i> Create Account
+        </button>
+        <div class="form-switch">Already have an account? <a onclick="gateTab('login')">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PROFILE SETTINGS PANEL ═══════════ -->
+<div class="ov" id="profileOv">
+  <div class="profile-card">
+    <button class="gate-close" onclick="closeProfile()"><i class="fas fa-times"></i></button>
+    <div class="profile-hd">Profile Settings</div>
+    <div class="profile-desc">Update your name, theme, and account preferences.</div>
+    <div class="fg">
+      <label class="fl">Full Name</label>
+      <input class="fi" id="pName" type="text" placeholder="Your name">
+    </div>
+    <div class="fg">
+      <label class="fl">Email Address</label>
+      <input class="fi" id="pEmail" type="email" readonly>
+    </div>
+    <div class="fg">
+      <label class="fl">Theme</label>
+      <select class="fi" id="pTheme" onchange="setProfileTheme(this.value)">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">Saved Trips</label>
+      <div id="profileTripsCount" style="font-size:14px;color:var(--ink2)">0 trips</div>
+    </div>
+    <button class="bfull bsf" onclick="saveProfile()"><i class="fas fa-save"></i> Save Changes</button>
+    <button class="bfull nbtn-o" onclick="clearSavedTrips()"><i class="fas fa-trash-alt"></i> Clear Saved Trips</button>
+    <button class="bfull nbtn-o" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+  </div>
+</div>
+
+<!-- ═══════════ PLACE INFO PANEL ═══════════ -->
+<div class="pp" id="pp">
+  <div class="pp-imgw">
+    <img id="ppImg" src="" alt="">
+    <button class="pp-close" onclick="closePP()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="pp-body">
+    <div class="pp-cat" id="ppCat"></div>
+    <div class="pp-name" id="ppName"></div>
+    <div class="pp-chips" id="ppChips"></div>
+    <div class="pp-desc" id="ppDesc"></div>
+    <div class="pp-tip">
+      <div class="tip-lbl"><i class="fas fa-lightbulb"></i>AI Insider Tip</div>
+      <div class="tip-body" id="ppTip"><span class="tip-loading">Fetching tip…</span></div>
+    </div>
+    <div class="pp-score">
+      <div class="score-ring" id="ppRing">
+        <span class="score-num" id="ppScore"></span>
+      </div>
+      <div class="score-meta">
+        <strong id="ppScoreGrade"></strong>
+        Experience Score
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div id="heroS">
+  <div class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-badge"><div class="bdot"></div>0/1 Knapsack · Guaranteed Optimal</div>
+    <h1>Plan India,<br><em>Perfectly.</em></h1>
+    <p class="hero-desc">Set your time & budget in ₹. Our DP algorithm finds the mathematically optimal mix of experiences across India's greatest cities.</p>
+    <div class="hero-btns">
+      <button class="hbtn hbtn-p" onclick="requireAuth()">
+        <i class="fas fa-route"></i> &nbsp;Start Planning
+      </button>
+      <button class="hbtn hbtn-s" onclick="openGate('reg')">
+        <i class="fas fa-user-plus"></i> &nbsp;Create Account
+      </button>
+    </div>
+    <div class="hero-cities">
+      <div class="hcity"><i class="fas fa-monument"></i>Delhi</div>
+      <div class="hcity"><i class="fas fa-crown"></i>Jaipur</div>
+      <div class="hcity"><i class="fas fa-film"></i>Mumbai</div>
+      <div class="hcity"><i class="fas fa-fire"></i>Varanasi</div>
+      <div class="hcity"><i class="fas fa-leaf"></i>Kerala</div>
+      <div class="hcity"><i class="fas fa-umbrella-beach"></i>Goa</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="appS">
+  <div class="app-header">
+    <p class="app-subtitle">Launch your next Indian adventure with optimized city choices and budget-smart experiences.</p>
+    <h2 class="app-title">Travel smart, <em>explore deeper.</em></h2>
+  </div>
+  <div class="app-grid">
+
+    <!-- SIDEBAR -->
+    <aside class="sb">
+      <div>
+        <div class="stitle"><i class="fas fa-map-marker-alt"></i>Select City</div>
+        <div class="cg" id="cityGrid"></div>
+      </div>
+      <div>
+        <div class="stitle"><i class="fas fa-sliders-h"></i>Constraints</div>
+        <div class="sl-block">
+          <div class="sl-row">
+            <span class="sl-lbl"><i class="far fa-clock"></i>Time Available</span>
+            <span class="sl-val" id="tVal">8h</span>
+          </div>
+          <input type="range" id="tSlider" min="2" max="16" value="8" step="1"
+            oninput="document.getElementById('tVal').textContent=this.value+'h'">
+          <div class="sl-row" style="margin-top:8px">
+            <span class="sl-lbl"><i class="fas fa-rupee-sign"></i>Budget</span>
+            <span class="sl-val" id="bVal">₹2,000</span>
+          </div>
+          <input type="range" id="bSlider" min="200" max="10000" value="2000" step="100"
+            oninput="document.getElementById('bVal').textContent='₹'+Number(this.value).toLocaleString('en-IN')">
+        </div>
+      </div>
+      <div class="lbar" id="lbar"></div>
+      <button class="opt-btn" id="optBtn" onclick="runOptimize()">
+        <i class="fas fa-bolt"></i>Optimise My Yatra
+      </button>
+      <div id="miniStatsWrap" style="display:none">
+        <div class="stitle"><i class="fas fa-chart-bar"></i>Last Result</div>
+        <div class="mini-stats">
+          <div class="ms-card"><div class="ms-val" id="msS">—</div><div class="ms-lbl">Score</div></div>
+          <div class="ms-card"><div class="ms-val" id="msT">—</div><div class="ms-lbl">Hours</div></div>
+          <div class="ms-card"><div class="ms-val" id="msC">—</div><div class="ms-lbl">Stops</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div style="display:flex;flex-direction:column;max-width:1200px;margin:0 auto;width:100%">
+      <div class="tabs">
+        <button class="tb on" onclick="switchTab('attractions')"><i class="fas fa-th-large"></i>Attractions</button>
+        <button class="tb" onclick="switchTab('map')"><i class="fas fa-map"></i>Map</button>
+        <button class="tb" onclick="switchTab('results')"><i class="fas fa-list-check"></i>Itinerary</button>
+        <button class="tb" onclick="switchTab('trips')"><i class="fas fa-bookmark"></i>My Trips</button>
+      </div>
+
+      <div class="tp on" id="tp-attractions">
+        <div class="cards" id="cardsArea"></div>
+      </div>
+
+      <div class="tp" id="tp-map">
+        <div id="map"></div>
+      </div>
+
+      <div class="tp" id="tp-results">
+        <div class="res-area" id="resArea">
+          <div class="empty">
+            <i class="fas fa-route empty-icon"></i>
+            <div class="empty-title">No itinerary yet</div>
+            <div class="empty-desc">Choose a city, set time &amp; budget, then click <strong>Optimise</strong>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tp" id="tp-trips">
+        <div class="trips-area" id="tripsArea">
+          <div class="empty">
+            <i class="fas fa-bookmark empty-icon"></i>
+            <div class="empty-title">No saved trips</div>
+            <div class="empty-desc">Optimise and save your first yatra!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastTxt"></span></div>
+
+<script src="script.js"></script>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer style="text-align:center;padding:18px 10px;background:#7c7b7b12;border-top:1px solid var(--bdr);font-size:12px;color:var(--muted);font-family:'Inter',sans-serif">
+  Built by: <strong style="color:var(--ink)">Gaurav Gautam</strong>
+</footer>
+</body>
+</html>
