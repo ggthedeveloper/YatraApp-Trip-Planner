@@ -26,6 +26,16 @@ A lightweight, client-side trip planner for India built with HTML, CSS, and Java
    ```
 2. Open `http://localhost:8000` in your browser.
 
+## Demo Screenshot
+
+![YatraApp preview](https://raw.githubusercontent.com/ggthedeveloper/YatraApp-Trip-Planner/main/screenshot.png)
+
+> If you want, replace this image link with your own screenshot file in the repo and reference it here.
+
+## Deployment
+
+This project can be deployed easily via GitHub Pages because it is static. Enable GitHub Pages on the `main` branch in repository settings and serve the site from the root.
+
 ## Notes
 
 - This project stores user accounts and saved trips in browser `localStorage`.
