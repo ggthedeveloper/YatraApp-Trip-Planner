@@ -127,7 +127,8 @@ This is a **fully static project**, so deployment is simple:
 
 ## 👨‍💻 Author
 
-**Gaurav Gautam**  
+***Gaurav Gautam***
+
 ---
 
 ## 📜 License
