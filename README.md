@@ -1,7 +1,7 @@
 # 🌍 YatraApp – Smart Trip Planner
 
 A modern, lightweight **client-side trip planner** designed to help users explore and organize trips across India efficiently.  
-Built using **HTML, CSS, and JavaScript**, YatraApp provides an interactive and optimized travel planning experience.
+Built using **HTML, CSS, and JavaScript**, YatraApp delivers an interactive travel experience powered by **Dynamic Programming (0/1 Knapsack algorithm)** to generate optimized itineraries based on time and budget constraints.
 
 🔗 **Live Demo:**  
 https://ggthedeveloper.github.io/YatraApp-Trip-Planner/
@@ -35,6 +35,37 @@ https://ggthedeveloper.github.io/YatraApp-Trip-Planner/
   Clean and responsive UI across themes
 
 ---
+## 🧠 Algorithm & Optimization Approach
+
+YatraApp uses a **smart optimization technique** to generate the best travel itinerary based on user constraints.
+
+### 🎯 Problem Framing
+The trip planning problem is modeled as a **0/1 Knapsack Problem**, where:
+
+- Each attraction = an item  
+- Time/Cost = weight  
+- Experience/priority = value  
+- Constraints = total available time or budget  
+
+### ⚙️ Technique Used
+
+- **Dynamic Programming (DP)** is used to efficiently compute the optimal selection of attractions.
+- Ensures:
+  - ✅ Maximum travel value (best experience)
+  - ✅ Within user-defined constraints (time/budget)
+
+### 💡 Why This Approach?
+
+- Avoids brute-force combinations (which are exponential)
+- Provides optimal results in **O(n × capacity)** time
+- Scales well as the number of attractions increases
+
+### 🚀 Outcome
+
+Users get:
+- A **balanced itinerary**
+- Maximum utilization of time and budget
+- Intelligent selection of places instead of random planning
 
 ## 🛠️ Tech Stack
 
