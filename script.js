@@ -232,7 +232,7 @@ const CITIES = {
        
       {id:"ga4",name:"Anjuna Flea Market",time:2,cost:0,score:85,cat:"Shopping",lat:15.6030,lng:73.7479,
        desc:"Every Wednesday. Hippie vibe with clothes, jewellery, handicrafts, souvenirs. Live music, food stalls. Bargain for unique findings. Free entry.",
-       img:"https://www.tourmyindia.com/states/goa/image/anjuna-flea-market-goa.webp.jpg"},
+       img:"https://www.shutterstock.com/image-photo/anjuna-goa-india-february-20th-600nw-2542785299.jpg"},
        
       {id:"ga5",name:"Fort Aguada",time:1,cost:0,score:80,cat:"Heritage",lat:15.4909,lng:73.7714,
        desc:"17th-century Portuguese fort with panoramic Arabian Sea views. Lighthouse, dungeons, and a small beach.",
