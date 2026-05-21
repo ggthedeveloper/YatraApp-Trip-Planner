@@ -73,6 +73,67 @@ body.dark .res-sub,
 body.dark .trip-meta{
   color:#a0a0a0;
 }
+/* ── TIP SECTION ── */
+.pp-tip{
+  background:#FFFAEE;
+  border:1px solid #EDD56A;
+  border-radius:11px;
+  padding:13px 15px;
+  margin-bottom:16px;
+  transition:
+    background .25s ease,
+    border-color .25s ease,
+    box-shadow .25s ease;
+}
+
+.tip-lbl{
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:#B8900A;
+  margin-bottom:6px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+
+.tip-body{
+  font-size:12px;
+  color:var(--ink2);
+  line-height:1.68;
+}
+
+.tip-loading{
+  font-style:italic;
+  color:var(--muted);
+}
+
+/* ── DARK MODE ── */
+body.dark .pp-tip{
+  background:linear-gradient(
+    135deg,
+    rgba(232,89,10,.12),
+    rgba(232,89,10,.04)
+  );
+  border:1px solid rgba(232,89,10,.28);
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+body.dark .tip-lbl{
+  color:#F4C15D;
+}
+
+body.dark .tip-body{
+  color:#d6d6d6;
+}
+
+body.dark .tip-loading{
+  color:#9a9a9a;
+}
+
 /* SIDEBAR COLLAPSE (DARK MODE PATCH) */
 .sb.collapsed{
   max-width:80px;
@@ -327,7 +388,7 @@ body.dark .profile-card{
   border:1px solid #2a2a2e;
   color:#f1f1f1;
   box-shadow:0 16px 45px rgba(0,0,0,.45);
-}
+}   
 body.dark .profile-hd{color:#fff;}
 body.dark .profile-desc{color:#bfbfbf;}
 body.dark .profile-card .nbtn-o{border-color:#2a2a2e;color:#ddd;}
