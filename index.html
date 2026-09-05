@@ -78,6 +78,7 @@
           <i class="fas fa-sign-in-alt"></i> Sign In
         </button>
         <div class="form-switch">Don't have an account? <a onclick="gateTab('reg')">Create one free</a></div>
+        <div class="form-switch" style="margin-top:8px"><a onclick="closeGate();goApp()" style="color:var(--muted);font-weight:400">Continue as Guest &rarr;</a></div>
       </div>
 
       <!-- REGISTER -->
@@ -104,6 +105,7 @@
           <i class="fas fa-user-plus"></i> Create Account
         </button>
         <div class="form-switch">Already have an account? <a onclick="gateTab('login')">Sign in</a></div>
+        <div class="form-switch" style="margin-top:8px"><a onclick="closeGate();goApp()" style="color:var(--muted);font-weight:400">Continue as Guest &rarr;</a></div>
       </div>
     </div>
   </div>
@@ -150,9 +152,37 @@
     <div class="pp-cat" id="ppCat"></div>
     <div class="pp-name" id="ppName"></div>
     <div class="pp-chips" id="ppChips"></div>
+
+    <div class="pp-audio-wrap">
+      <button class="audio-btn" id="ppAudioBtn" onclick="toggleAudioGuide()">
+        <i class="fas fa-volume-up"></i> <span id="ppAudioTxt">Listen to Audio Guide</span>
+      </button>
+    </div>
+
     <div class="pp-desc" id="ppDesc"></div>
+
+    <!-- Practical Visitor Details -->
+    <div class="pp-details-grid">
+      <div class="pdi">
+        <div class="pdi-lbl"><i class="far fa-clock"></i> Timings</div>
+        <div class="pdi-val" id="ppHours">—</div>
+      </div>
+      <div class="pdi">
+        <div class="pdi-lbl"><i class="fas fa-sun"></i> Best Time</div>
+        <div class="pdi-val" id="ppBestTime">—</div>
+      </div>
+      <div class="pdi">
+        <div class="pdi-lbl"><i class="fas fa-tshirt"></i> Dress Code</div>
+        <div class="pdi-val" id="ppDress">—</div>
+      </div>
+      <div class="pdi">
+        <div class="pdi-lbl"><i class="fas fa-subway"></i> Transit / Metro</div>
+        <div class="pdi-val" id="ppMetro">—</div>
+      </div>
+    </div>
+
     <div class="pp-tip">
-      <div class="tip-lbl"><i class="fas fa-lightbulb"></i>AI Insider Tip</div>
+      <div class="tip-lbl"><i class="fas fa-lightbulb"></i>AI &amp; Local Insider Tip</div>
       <div class="tip-body" id="ppTip"><span class="tip-loading">Fetching tip…</span></div>
     </div>
     <div class="pp-score">
@@ -174,9 +204,9 @@
     <div class="hero-glow"></div>
     <div class="hero-badge"><div class="bdot"></div>0/1 Knapsack · Guaranteed Optimal</div>
     <h1>Plan India,<br><em>Perfectly.</em></h1>
-    <p class="hero-desc">Set your time & budget in ₹. Our DP algorithm finds the mathematically optimal mix of experiences across India's greatest cities.</p>
+    <p class="hero-desc">Set your time &amp; budget in ₹. Our DP algorithm finds the mathematically optimal mix of experiences across India's greatest cities.</p>
     <div class="hero-btns">
-      <button class="hbtn hbtn-p" onclick="requireAuth()">
+      <button class="hbtn hbtn-p" onclick="goApp()">
         <i class="fas fa-route"></i> &nbsp;Start Planning
       </button>
       <button class="hbtn hbtn-s" onclick="openGate('reg')">
@@ -207,6 +237,22 @@
       <div>
         <div class="stitle"><i class="fas fa-map-marker-alt"></i>Select City</div>
         <div class="cg" id="cityGrid"></div>
+        <!-- Live City Weather Widget -->
+        <div class="weather-box" id="cityWeather">
+          <div class="wb-top">
+            <div class="wb-temp-wrap">
+              <span class="wb-icon" id="wIcon"><i class="fas fa-sun"></i></span>
+              <span class="wb-temp" id="wTemp">--°C</span>
+            </div>
+            <div class="wb-meta">
+              <div class="wb-cond" id="wCond">Checking weather…</div>
+              <div class="wb-city" id="wCityName">New Delhi</div>
+            </div>
+          </div>
+          <div class="wb-tip" id="wTip">
+            <i class="fas fa-compass"></i> <span id="wTipTxt">Fetching live forecast…</span>
+          </div>
+        </div>
       </div>
       <div>
         <div class="stitle"><i class="fas fa-sliders-h"></i>Constraints</div>
@@ -243,16 +289,41 @@
     <div style="display:flex;flex-direction:column;max-width:1200px;margin:0 auto;width:100%">
       <div class="tabs">
         <button class="tb on" onclick="switchTab('attractions')"><i class="fas fa-th-large"></i>Attractions</button>
-        <button class="tb" onclick="switchTab('map')"><i class="fas fa-map"></i>Map</button>
+        <button class="tb" onclick="switchTab('map')"><i class="fas fa-map"></i>Map &amp; Route</button>
         <button class="tb" onclick="switchTab('results')"><i class="fas fa-list-check"></i>Itinerary</button>
         <button class="tb" onclick="switchTab('trips')"><i class="fas fa-bookmark"></i>My Trips</button>
       </div>
 
       <div class="tp on" id="tp-attractions">
+        <!-- Filter & Search Toolbar -->
+        <div class="filter-bar">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="attrSearch" placeholder="Search attractions, monuments, foods..." oninput="onSearchInput(this.value)">
+            <button class="clear-search" id="clearSearchBtn" onclick="clearSearch()" style="display:none"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="cat-bar" id="catBar">
+            <button class="cat-pill on" onclick="setCategoryFilter('all', this)"><i class="fas fa-border-all"></i> All</button>
+            <button class="cat-pill" onclick="setCategoryFilter('Heritage', this)"><i class="fas fa-monument"></i> Heritage</button>
+            <button class="cat-pill" onclick="setCategoryFilter('Spiritual', this)"><i class="fas fa-om"></i> Spiritual</button>
+            <button class="cat-pill" onclick="setCategoryFilter('Nature', this)"><i class="fas fa-mountain-sun"></i> Nature</button>
+            <button class="cat-pill" onclick="setCategoryFilter('Culture', this)"><i class="fas fa-masks-theater"></i> Culture</button>
+            <button class="cat-pill" onclick="setCategoryFilter('Food', this)"><i class="fas fa-utensils"></i> Food</button>
+            <button class="cat-pill" onclick="setCategoryFilter('Scenic', this)"><i class="fas fa-camera"></i> Scenic</button>
+            <button class="cat-pill" onclick="setCategoryFilter('Shopping', this)"><i class="fas fa-bag-shopping"></i> Shopping</button>
+          </div>
+        </div>
         <div class="cards" id="cardsArea"></div>
       </div>
 
       <div class="tp" id="tp-map">
+        <div class="map-toolbar">
+          <span class="map-title" id="mapHeaderTitle"><i class="fas fa-location-dot"></i> City Overview</span>
+          <div class="map-ctrls">
+            <button class="map-btn" onclick="fitMapBounds()"><i class="fas fa-expand"></i> Reset View</button>
+            <button class="map-btn" id="mapThemeBtn" onclick="toggleMapBasemap()"><i class="fas fa-layer-group"></i> Dark Map</button>
+          </div>
+        </div>
         <div id="map"></div>
       </div>
 

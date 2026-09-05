@@ -45,69 +45,96 @@ Users get:
 ## ✨ Features
 
 - 🧭 **Multi-City Travel Planning**  
-  Explore destinations like Delhi, Jaipur, Mumbai, Varanasi, Kerala, and Goa
+  Explore destinations like Delhi, Jaipur, Mumbai, Varanasi, Kerala, and Goa with 60+ verified attractions.
 
-- ⚙️ **Smart Itinerary Optimization**  
-  Uses a **0/1 Knapsack algorithm** to optimize travel plans based on:
-  - Time constraints
-  - Budget limits
+- ⚙️ **Smart 0/1 Knapsack Optimization + Must-Visit Pinning**  
+  - Dynamic programming algorithm guarantees optimal experience within time and budget constraints.
+  - ⭐ **Pin Must-Visit Places**: Guarantee your favorite spots while optimizing the rest of your day around them.
 
-- 🗺️ **Interactive Map Integration**  
-  Visualize locations using **Leaflet.js**
+- 🌤️ **Live Real-Time Weather**  
+  Integrated with **Open-Meteo API** to display real-time temperature, condition forecasts, and packing tips for each destination.
 
-- 🧠 **AI-Inspired Travel Tips**  
-  Get helpful suggestions for attractions
+- 🚕 **Realistic Transit & Travel Time Estimation**  
+  Calculates distance between sequential stops via the **Haversine formula**, estimating realistic transit duration, transit modes (Metro/Auto/Taxi), and transit fares in Indian urban traffic.
 
-- 👤 **User Profile System**  
-  - Save trips locally using `localStorage`
-  - Manage preferences (name, theme, saved trips)
+- 🍱 **Mid-Day Authentic Lunch Windows**  
+  Schedules an authentic culinary lunch break (1:00 PM – 2:00 PM) featuring iconic regional dishes (e.g., Parathe Wali Gali in Delhi, Dal Baati in Jaipur, Sadya in Kerala, Goan Fish Curry).
 
-- 💾 **Save & Load Trips**  
-  Easily store and revisit your travel plans
+- 💰 **Comprehensive Budget Breakdown**  
+  Detailed estimation covering:
+  - Monument & attraction entrance tickets
+  - Local transit fares (auto-rickshaws, metro, taxis)
+  - Regional meals, snacks & chai
+
+- 🗺️ **Interactive Route Map with Sequential Polylines**  
+  - Visualized using **Leaflet.js** and **CartoDB** basemaps.
+  - Numbered stop markers (`1`, `2`, `3`...) connected by directional dashed route polylines.
+  - Auto-adapts between Light and Dark map themes.
+
+- 🔊 **Voice Audio Guide**  
+  Listen to natural voice narration of attraction history, highlights, and local secrets powered by the **Web Speech API**.
+
+- 🔍 **Instant Search & Category Filtering**  
+  Filter attractions by categories (*Heritage, Spiritual, Nature, Culture, Food, Scenic, Shopping*) or search by keyword.
+
+- ✅ **Interactive Day Checklist**  
+  Check off attractions as you visit them during your trip with dynamic progress tracking.
+
+- 📥 **Export to Print/PDF, Calendar & Sharing**  
+  - Export printable travel vouchers formatted for PDF.
+  - Download `.ics` iCalendar files for Google Calendar, Apple Calendar, and Outlook.
+  - One-click itinerary sharing via WhatsApp and clipboard.
+
+- 👤 **Interactive Profile & Saved Trips**  
+  - Re-open saved trips anytime to view the complete itinerary and map route.
+  - Guest mode support: plan trips immediately without forced login.
+  - LocalStorage persistence.
 
 - 🌙 **Dark Mode Support**  
-  Clean and responsive UI across themes
+  Seamless theme toggle with adaptive UI and dark map styling.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** HTML, CSS, JavaScript  
-- **Maps:** Leaflet.js  
+- **Frontend:** HTML5, CSS3, Modern JavaScript (ES6+)  
+- **Maps:** Leaflet.js, CartoDB Basemaps  
+- **Weather API:** Open-Meteo API (Live forecast, no key required)  
+- **Audio:** Web Speech API (`SpeechSynthesis`)  
+- **Calendar:** RFC 5545 iCalendar (`.ics`) Generator  
 - **Storage:** Browser LocalStorage  
 - **Deployment:** GitHub Pages  
 
 ---
 
 ## 📁 Project Structure
+```text
 YatraApp-Trip-Planner/
 │
-├── index.html      # Main application UI
-├── style.css       # Styling and responsive design
-├── script.js       # Core logic (planner, auth, map, UI)
+├── index.html      # Application UI, structure, search bar & modals
+├── style.css       # Design system, themes, map styling & print rules
+├── script.js       # Core engine (Knapsack DP, Leaflet route, weather, audio, trips)
 └── README.md       # Project documentation
+```
 
 ---
 
 ## 🚀 How It Works
 
-1. Select a city  
-2. Choose attractions  
-3. Set your:
-   - Time limit  
-   - Budget  
-4. The system generates an **optimized itinerary**  
-5. Save your trip for later use  
+1. **Select a City:** Pick from Delhi, Jaipur, Mumbai, Varanasi, Kerala, or Goa.
+2. **Browse & Pin:** Search attractions, filter by category, and pin must-visit places with the star icon.
+3. **Set Constraints:** Adjust available sightseeing hours and budget in ₹.
+4. **Optimise:** The 0/1 Knapsack algorithm computes the optimal itinerary with transit times and lunch.
+5. **Explore & Export:** View the route on the map, listen to audio guides, export to PDF or your calendar, and save the trip!
 
 ---
 
 ## 🎯 Future Improvements
 
-- Backend integration (user authentication & cloud storage)  
-- Real-time travel data (weather, traffic)  
-- Mobile app version  
-- Recommendation system using ML  
-- More cities & dynamic APIs  
+- Backend cloud synchronization (Firebase / Supabase)
+- Multi-day trip planning (2-day and 3-day itineraries)
+- Crowd estimation & live traffic integration
+- PWA (Progressive Web App) offline support  
 
 ---
 
