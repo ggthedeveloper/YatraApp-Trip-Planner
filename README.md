@@ -47,8 +47,14 @@ Users get:
 - 🧭 **Multi-City Travel Planning**  
   Explore destinations like Delhi, Jaipur, Mumbai, Varanasi, Kerala, and Goa with 60+ verified attractions.
 
-- 🗓️ **Multi-Day Itinerary Engine (1, 2, or 3 Days)**  
-  Plan single-day or multi-day tours with tabbed daily schedules (`Day 1`, `Day 2`, `Day 3`). Uses spatial clustering and Dynamic Programming so attractions each day are geographically coherent and practical to travel between.
+- 🗓️ **Customizable Trip Duration (1 to 14 Days) & Calendar Dates**  
+  Customize your trip duration from 1 up to 14 days with an interactive stepper and quick presets (`1D`, `2D`, `3D`, `4D`, `5D`, `7D`). Pick your specific **Trip Start Date** and **Daily Start Time**; all daily schedules and `.ics` calendar exports sync to authentic calendar dates (e.g., `Day 1 · Saturday, Oct 12`).
+
+- 📜 **Modernized Visual Itinerary Timeline & Dual Views**  
+  - Continuous vertical milestone spine with numbered nodes (`1`, `2`, `3`...), distinct transit connectors, and regional lunch breaks.
+  - **Dual View Modes**: Switch between **Day Tabs** for focused daily planning or **Full Journey** for a complete chronological scroll with sticky day milestone bars.
+  - One-click `Show on Map` camera pan, `Audio Guide` player, and `Directions ↗` in Google Maps.
+  - Inline `+ Add Place / Hotel` button directly on each day's timeline.
 
 - ⚡ **Travel Pace Customization**  
   Choose between **Relaxed** (longer lingering, higher buffers), **Balanced** (standard exploration), or **Packed** (maximum sights covered) pacing.

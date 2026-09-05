@@ -632,9 +632,14 @@ let mapPolylines = [];
 let isDarkMap = false;
 let currentBasemapLayer = null;
 
-// Multi-Day & Pace State
-let tripDays = 1;
+// Multi-Day, Pace, Dates & View State
+let tripDays = 2;
 let travelPace = 'balanced';
+let tripStartDate = new Date();
+tripStartDate.setDate(tripStartDate.getDate() + 1); // default tomorrow
+let tripStartTime = '09:00';
+let itineraryViewMode = 'tabs'; // 'tabs' | 'all'
+let targetAddPlaceDay = 0;
 
 // Search, Filter & Pinning State
 let currentCategory = 'all';
@@ -928,13 +933,129 @@ async function fetchCityWeather(cityKey) {
 /* ═══════════════════════════════════════════════════════
    MULTI-DAY PLANNING & TRAVEL PACE CONTROLS
 ═══════════════════════════════════════════════════════ */
-function setTripDays(days, btn) {
+function setTripDays(days) {
+  days = Math.max(1, Math.min(14, parseInt(days) || 1));
   tripDays = days;
-  document.querySelectorAll('#durCtrl .seg-btn').forEach(b => b.classList.remove('on'));
-  if (btn) btn.classList.add('on');
-  document.getElementById('durVal').textContent = `${days} Day${days > 1 ? 's' : ''}`;
+  const durInput = document.getElementById('durInput');
+  if (durInput) durInput.value = days;
+  const durVal = document.getElementById('durVal');
+  if (durVal) durVal.textContent = `${days} Day${days > 1 ? 's' : ''}`;
+
+  document.querySelectorAll('#durPresets .dur-pill').forEach(pill => {
+    pill.classList.toggle('on', parseInt(pill.getAttribute('data-days')) === days);
+  });
+
   updateTimeSliderDisplay(document.getElementById('tSlider').value);
   toast(`Trip duration set to ${days} Day${days > 1 ? 's' : ''}`);
+}
+
+function stepTripDays(delta) {
+  setTripDays(tripDays + delta);
+}
+
+function onTripDaysInputChange(val) {
+  setTripDays(val);
+}
+
+function initTripDates() {
+  const dateInput = document.getElementById('tripStartDate');
+  if (dateInput) {
+    const y = tripStartDate.getFullYear();
+    const m = String(tripStartDate.getMonth() + 1).padStart(2, '0');
+    const d = String(tripStartDate.getDate()).padStart(2, '0');
+    dateInput.value = `${y}-${m}-${d}`;
+    dateInput.min = `${y}-${m}-${d}`;
+  }
+}
+
+function onStartDateChange(val) {
+  if (val) {
+    tripStartDate = new Date(val + 'T00:00:00');
+    toast(`Trip start date set to ${formatDateLabel(tripStartDate)}`);
+    if (lastResult) {
+      renderResults(lastResult);
+    }
+  }
+}
+
+function onStartTimeChange(val) {
+  if (val) {
+    tripStartTime = val;
+    toast(`Daily start time set to ${formatTime12h(val)}`);
+    recomputeTripTimes();
+  }
+}
+
+function getDayDate(dayIndex) {
+  const d = new Date(tripStartDate || new Date());
+  d.setDate(d.getDate() + dayIndex);
+  return d;
+}
+
+function formatDateLabel(dateObj) {
+  return dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatTime12h(time24) {
+  const [h, m] = (time24 || "09:00").split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${(m || 0).toString().padStart(2, '0')} ${ampm}`;
+}
+
+function setItineraryViewMode(mode) {
+  itineraryViewMode = mode;
+  if (lastResult) {
+    renderResults(lastResult);
+  }
+}
+
+function showOnMap(lat, lng, name) {
+  switchTab('map');
+  setTimeout(() => {
+    if (mapI) {
+      mapI.invalidateSize();
+      mapI.flyTo([lat, lng], 15, { animate: true, duration: 1.2 });
+      if (markersLayer) {
+        markersLayer.eachLayer(layer => {
+          if (layer.getLatLng) {
+            const ll = layer.getLatLng();
+            if (Math.abs(ll.lat - lat) < 0.001 && Math.abs(ll.lng - lng) < 0.001) {
+              layer.openPopup();
+            }
+          }
+        });
+      }
+    }
+    toast(`📍 Focused on ${name} on map`);
+  }, 150);
+}
+
+function openPPAudio(cityKey, placeId) {
+  openPP(cityKey, placeId);
+  setTimeout(() => {
+    toggleAudioGuide();
+  }, 350);
+}
+
+function openAddPlaceModalForDay(dayIndex) {
+  targetAddPlaceDay = dayIndex;
+  openAddPlaceModal();
+}
+
+function recomputeTripTimes() {
+  if (!lastResult) return;
+  const city = lastResult.city;
+  if (lastResult.multiDay) {
+    lastResult.days = lastResult.days.map((d, idx) => generateSingleDaySchedule(d.itinerary, city, idx));
+    lastResult.itinerary = lastResult.days.flatMap(d => d.itinerary);
+    lastResult.fullSchedule = lastResult.days[activeResultDay].fullSchedule;
+  } else {
+    const d = generateSingleDaySchedule(lastResult.itinerary, city, 0);
+    lastResult.itinerary = d.itinerary;
+    lastResult.fullSchedule = d.fullSchedule;
+  }
+  renderResults(lastResult);
 }
 
 function setTravelPace(pace, btn) {
@@ -1104,6 +1225,28 @@ function saveCustomPlace() {
   closeAddPlaceModal();
   document.getElementById('cpName').value = '';
   renderCards();
+
+  // If added during active itinerary review, inject into that day's schedule directly
+  if (lastResult) {
+    const targetDay = lastResult.multiDay ? lastResult.days[targetAddPlaceDay] : lastResult;
+    if (targetDay && targetDay.itinerary) {
+      targetDay.itinerary.push(newPlace);
+      const updatedDay = generateSingleDaySchedule(targetDay.itinerary, city, targetAddPlaceDay);
+      if (lastResult.multiDay) {
+        lastResult.days[targetAddPlaceDay] = updatedDay;
+        lastResult.itinerary = lastResult.days.flatMap(d => d.itinerary);
+      } else {
+        lastResult.itinerary = updatedDay.itinerary;
+        lastResult.fullSchedule = updatedDay.fullSchedule;
+        lastResult.stats = { ...lastResult.stats, ...updatedDay.stats };
+      }
+      renderResults(lastResult);
+      if (mapI) updateMap();
+      toast(`Added "${name}" to Day ${targetAddPlaceDay + 1} itinerary!`);
+      return;
+    }
+  }
+
   toast(`Added "${name}" to ${city.name} attractions!`);
 }
 
@@ -1573,9 +1716,48 @@ function knapsack(items, maxT, maxB, bucket = 100) {
 }
 
 function generateSingleDaySchedule(picked, city, dayIndex = 0) {
-  let currentMinutes = 9 * 60; // 09:00 AM
+  const [startH, startM] = (tripStartTime || "09:00").split(':').map(Number);
+  let currentMinutes = (startH * 60) + (startM || 0);
   let hadLunch = false;
   const scheduled = [];
+
+  // If long multi-day itinerary has exhausted curated places, provide authentic local exploration
+  if (!picked || picked.length === 0) {
+    picked = [
+      {
+        id: `leisure_bazaar_${dayIndex}`,
+        name: `${city.name} Heritage Bazaars & Craft Trail`,
+        cat: "Culture",
+        desc: `Explore ${city.name}'s atmospheric historic bazaars, artisan handlooms, spice shops, and heritage alleys at your own relaxed pace.`,
+        img: city.attractions[0]?.img || "https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1200&auto=format&fit=crop",
+        cost: 0,
+        time: 3,
+        durationHours: 3,
+        score: 88,
+        lat: city.coords[0] + 0.008,
+        lng: city.coords[1] + 0.008,
+        metro: "Local City Center",
+        bestTime: "Morning / Afternoon",
+        dress: "Comfortable Walking Clothes"
+      },
+      {
+        id: `leisure_sunset_${dayIndex}`,
+        name: `Scenic Sunset Walk & Street Delicacies`,
+        cat: "Food",
+        desc: `Savor authentic regional savories and cutting chai while enjoying the golden hour over iconic viewpoints in ${city.name}.`,
+        img: city.attractions[1]?.img || "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=1200&auto=format&fit=crop",
+        cost: 250,
+        time: 2,
+        durationHours: 2,
+        score: 85,
+        lat: city.coords[0] - 0.008,
+        lng: city.coords[1] - 0.008,
+        metro: "Promenade / Riverside",
+        bestTime: "Late Afternoon / Sunset",
+        dress: "Casual"
+      }
+    ];
+  }
 
   for (let i = 0; i < picked.length; i++) {
     const place = picked[i];
@@ -1637,6 +1819,8 @@ function generateSingleDaySchedule(picked, city, dayIndex = 0) {
 
   return {
     dayNum: dayIndex + 1,
+    dayDate: getDayDate(dayIndex),
+    dayDateFormatted: formatDateLabel(getDayDate(dayIndex)),
     itinerary: realAttractions,
     fullSchedule: scheduled,
     stats: {
@@ -1870,7 +2054,7 @@ function switchResultDayTab(dayIdx) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   RENDER RESULTS (Multi-Day Tabs & Reordering Controls)
+   RENDER RESULTS (Modernized Visual Timeline & Dual View)
 ═══════════════════════════════════════════════════════ */
 function renderResults(d) {
   const container = document.getElementById('resArea');
@@ -1891,31 +2075,46 @@ function renderResults(d) {
     : `<button class="save-btn" onclick="saveTrip()"><i class="fas fa-bookmark"></i> Save Trip (Guest)</button>`;
 
   const days = d.multiDay ? d.days : [d];
+  const startDayDate = getDayDate(0);
+  const endDayDate = getDayDate(days.length - 1);
+  const dateRangeStr = days.length === 1
+    ? formatDateLabel(startDayDate)
+    : `${formatDateLabel(startDayDate)} – ${formatDateLabel(endDayDate)}`;
 
-  // Build Day Tabs for Multi-Day Trips
+  // Build Day Tabs for Multi-Day Trips (Tabs Mode)
   let dayTabsHTML = '';
-  if (d.multiDay) {
+  if (d.multiDay && itineraryViewMode === 'tabs') {
     dayTabsHTML = `
       <div class="day-tabs-bar">
-        ${days.map((day, idx) => `
-          <button class="dtab ${idx === activeResultDay ? 'on' : ''}" onclick="switchResultDayTab(${idx})">
-            <i class="fas fa-calendar-day"></i> Day ${idx + 1} (${day.itinerary.length} stops)
-          </button>`).join('')}
+        ${days.map((day, idx) => {
+          const dDate = getDayDate(idx);
+          return `
+            <button class="dtab ${idx === activeResultDay ? 'on' : ''}" onclick="switchResultDayTab(${idx})">
+              <i class="fas fa-calendar-day"></i> Day ${idx + 1} · ${formatDateLabel(dDate)} <small style="opacity:.85">(${day.itinerary.length} stops)</small>
+            </button>`;
+        }).join('')}
       </div>`;
   }
 
   // Render Day Timelines
   const daysHTML = days.map((day, dayIdx) => {
+    const dDate = getDayDate(dayIdx);
     let stepIdx = 0;
     const schedule = day.fullSchedule || day.itinerary;
+    const totalDistKm = schedule.reduce((sum, item) => sum + (item.transitBefore ? item.transitBefore.distKm : 0), 0);
+    const dayStartTime = schedule.length ? (schedule[0].start || '09:00') : '09:00';
+    const dayEndTime = schedule.length ? (schedule[schedule.length - 1].end || '17:00') : '17:00';
+
     const itemsHTML = schedule.map((item, itemIdx) => {
+      // Lunch Break Step
       if (item.isLunch) {
         return `
-          <div class="itin-lunch">
-            <div class="lunch-time">${item.start}<br><small style="font-size:10px">${item.end}</small></div>
-            <div class="lunch-content">
-              <div class="lunch-title"><i class="fas fa-utensils"></i> ${item.title}</div>
-              <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-top:2px">${item.dish} · <span style="font-weight:500;color:var(--muted)">${item.area}</span></div>
+          <div class="timeline-lunch-step">
+            <div class="lunch-spine-node"><i class="fas fa-utensils"></i></div>
+            <div class="lunch-bubble">
+              <div class="lunch-badge"><i class="fas fa-bowl-food"></i> Regional Lunch Break · ${item.start} – ${item.end}</div>
+              <div class="lunch-dish">${item.dish}</div>
+              <div class="lunch-area"><i class="fas fa-map-pin"></i> ${item.area}</div>
               <div class="lunch-desc">${item.desc}</div>
             </div>
           </div>`;
@@ -1925,74 +2124,147 @@ function renderResults(d) {
       stepIdx++;
       const isVisited = visitedStopIds.has(item.id);
 
+      // Transit Milestone Connector
       const transitBadge = item.transitBefore ? `
-        <div class="itin-transit">
-          <div class="transit-icon-line"><i class="fas fa-taxi"></i> ${item.transitBefore.minutes} min transit</div>
-          <div class="transit-detail">
-            ${item.transitBefore.distKm} km · via ${item.transitBefore.mode} (est. ${formatCurrency(item.transitBefore.estCost)})
+        <div class="timeline-transit-step">
+          <div class="transit-spine-node"><i class="fas fa-taxi"></i></div>
+          <div class="transit-bubble">
+            <div class="transit-main">
+              <span class="transit-mode-badge">${item.transitBefore.mode}</span>
+              <span class="transit-dur-txt"><strong>${item.transitBefore.minutes} min</strong> transit</span>
+              <span class="transit-dist-txt">(${item.transitBefore.distKm} km · est. ${formatCurrency(item.transitBefore.estCost)})</span>
+            </div>
             <a href="https://www.google.com/maps/dir/?api=1&origin=${item.transitBefore.originLat},${item.transitBefore.originLng}&destination=${item.transitBefore.destLat},${item.transitBefore.destLng}&travelmode=driving"
-               target="_blank" class="gmaps-link"><i class="fas fa-diamond-turn-right"></i> Directions</a>
+               target="_blank" class="transit-dir-btn">
+               <i class="fas fa-diamond-turn-right"></i> Route Maps ↗
+            </a>
           </div>
         </div>` : '';
 
+      // Attraction Stop Card
+      const safeName = (item.name || '').replace(/'/g, "\\'");
+      const gmapsDirUrl = item.transitBefore
+        ? `https://www.google.com/maps/dir/?api=1&origin=${item.transitBefore.originLat},${item.transitBefore.originLng}&destination=${item.lat},${item.lng}&travelmode=driving`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + d.city.name)}`;
+
       return `
         ${transitBadge}
-        <div class="itin-stop ${isVisited ? 'visited' : ''}" id="itin_stop_${item.id}" onclick="openPP('${activeCity}','${item.id}')">
-          <button class="itin-chk-btn" onclick="event.stopPropagation();toggleVisited('${item.id}')" title="Mark as Visited">
-            <i class="fas fa-check"></i>
-          </button>
-          <div class="itin-time">
-            <div class="itin-ts">${item.start}</div>
-            <div class="itin-te">${item.end}</div>
+        <div class="timeline-step">
+          <div class="node-badge" title="Stop #${stepIdx}">
+            ${d.multiDay ? `D${dayIdx + 1}.${stepIdx}` : `${stepIdx}`}
           </div>
-          <div class="itin-body">
-            <img class="itin-img" src="${item.img}" alt="${item.name}"
-              onerror="this.src='https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1200&auto=format&fit=crop'">
-            <div style="flex:1">
-              <div class="itin-name">
-                <span style="font-size:11px;color:var(--sf);font-weight:700;margin-right:4px">
-                  ${d.multiDay ? `D${dayIdx + 1}.${stepIdx}` : `#${stepIdx}`}
-                </span> ${item.name}
+          <div class="itin-card ${isVisited ? 'visited' : ''}" id="itin_stop_${item.id}">
+            <!-- Card Header -->
+            <div class="ic-header">
+              <div class="ic-time-badge">
+                <i class="far fa-clock"></i> ${item.start} – ${item.end}
+                <span class="ic-dur">(${item.durationHours || item.time}h)</span>
               </div>
-              <div class="itin-chips">
-                <span class="chip ct" style="font-size:9px"><i class="far fa-clock"></i>${item.durationHours || item.time}h</span>
-                <span class="chip cc2" style="font-size:9px">${formatCurrency(item.cost)}</span>
-                <span class="chip cs" style="font-size:9px"><i class="fas fa-star"></i>${item.score}</span>
-                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + d.city.name)}"
-                   target="_blank" onclick="event.stopPropagation()" class="gmaps-link">
-                   <i class="fas fa-location-arrow"></i> Google Maps
+              <span class="ic-cat-pill">${item.cat || 'Attraction'}</span>
+              <div class="ic-actions" onclick="event.stopPropagation()">
+                <button class="ic-act-btn" onclick="moveStopUp(${dayIdx}, ${realIdx})" title="Move Stop Earlier">▲</button>
+                <button class="ic-act-btn" onclick="moveStopDown(${dayIdx}, ${realIdx})" title="Move Stop Later">▼</button>
+                <button class="ic-act-btn ic-del" onclick="removeStop(${dayIdx}, ${realIdx})" title="Remove Stop">✕</button>
+                <button class="ic-chk-btn ${isVisited ? 'checked' : ''}" onclick="toggleVisited('${item.id}')" title="${isVisited ? 'Mark Unvisited' : 'Mark as Visited'}">
+                  <i class="fas fa-check"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="ic-body" onclick="openPP('${activeCity}','${item.id}')">
+              <div class="ic-img-wrap">
+                <img class="ic-img" src="${item.img}" alt="${item.name}" loading="lazy"
+                  onerror="this.src='https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1200&auto=format&fit=crop'">
+                <div class="ic-score-tag">⭐ ${item.score}</div>
+              </div>
+              <div class="ic-info">
+                <h4 class="ic-title">${item.name}</h4>
+                <div class="ic-meta-row">
+                  ${item.metro ? `<span class="ic-meta-tag"><i class="fas fa-subway"></i> ${item.metro}</span>` : ''}
+                  ${item.bestTime ? `<span class="ic-meta-tag"><i class="fas fa-sun"></i> ${item.bestTime}</span>` : ''}
+                  ${item.dress ? `<span class="ic-meta-tag"><i class="fas fa-shirt"></i> ${item.dress}</span>` : ''}
+                </div>
+                <p class="ic-desc">${item.desc || ''}</p>
+              </div>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="ic-footer" onclick="event.stopPropagation()">
+              <div class="ic-cost-tag">
+                <i class="fas fa-ticket"></i> Entry: <strong>${item.cost === 0 ? 'Free Entry' : formatCurrency(item.cost)}</strong>
+              </div>
+              <div class="ic-links">
+                <button class="ic-link-btn" onclick="showOnMap(${item.lat}, ${item.lng}, '${safeName}')">
+                  <i class="fas fa-location-dot"></i> Show on Map
+                </button>
+                <button class="ic-link-btn" onclick="openPPAudio('${activeCity}','${item.id}')">
+                  <i class="fas fa-volume-up"></i> Audio
+                </button>
+                <a href="${gmapsDirUrl}" target="_blank" class="ic-link-btn gmaps-btn">
+                  <i class="fas fa-diamond-turn-right"></i> Directions ↗
                 </a>
               </div>
             </div>
-            <!-- Stop Reordering Controls -->
-            <div class="itin-ctrls" onclick="event.stopPropagation()">
-              <button class="stop-btn" onclick="moveStopUp(${dayIdx}, ${realIdx})" title="Move Stop Earlier">▲</button>
-              <button class="stop-btn" onclick="moveStopDown(${dayIdx}, ${realIdx})" title="Move Stop Later">▼</button>
-              <button class="stop-btn stop-del-btn" onclick="removeStop(${dayIdx}, ${realIdx})" title="Remove Stop">✕</button>
-            </div>
-          </div>
-          <div class="itin-ring" style="background:conic-gradient(${DAY_COLORS[dayIdx % DAY_COLORS.length]} ${item.score * 3.6}deg,#DDD0BA 0deg)">
-            <span class="itin-ring-num">${item.score}</span>
           </div>
         </div>`;
     }).join('');
 
+    const isVisible = (itineraryViewMode === 'all') || (dayIdx === activeResultDay);
+
     return `
-      <div class="day-view-panel" id="dayViewPanel_${dayIdx}" style="display:${dayIdx === activeResultDay ? 'block' : 'none'}">
-        <div class="itin">
-          <div class="itin-hd" style="background:${DAY_COLORS[dayIdx % DAY_COLORS.length]}">
-            <i class="fas fa-route"></i> Day ${dayIdx + 1} Plan · Starting 9:00 AM · ${day.itinerary.length} stops planned
+      <div class="day-view-panel" id="dayViewPanel_${dayIdx}" style="display:${isVisible ? 'block' : 'none'}">
+        <!-- Day Section Milestone Header -->
+        <div class="day-section-bar">
+          <div class="day-title-wrap">
+            <span class="day-num-tag">DAY ${dayIdx + 1}</span>
+            <div>
+              <span class="day-heading-txt">Day ${dayIdx + 1} Plan</span>
+              <span class="day-date-txt">· ${formatDateLabel(dDate)}</span>
+            </div>
           </div>
+          <div class="day-meta-pills">
+            <span><i class="far fa-clock"></i> ${dayStartTime} – ${dayEndTime}</span>
+            <span>·</span>
+            <span><i class="fas fa-route"></i> ${Math.round(totalDistKm * 10) / 10} km transit</span>
+            <span>·</span>
+            <span><i class="fas fa-map-pin"></i> ${day.itinerary.length} stops</span>
+          </div>
+        </div>
+
+        <!-- Continuous Vertical Timeline -->
+        <div class="itin-timeline-wrap">
           ${itemsHTML}
+
+          <!-- Day Footer Action Bar -->
+          <div class="day-foot-bar">
+            <div class="df-summary">
+              <i class="fas fa-flag-checkered"></i> Day ${dayIdx + 1} Total: ${day.itinerary.length} Attractions · ${formatCurrency(day.stats.grand_total_cost)} Est. Spend
+            </div>
+            <button class="df-add-btn" onclick="openAddPlaceModalForDay(${dayIdx})">
+              <i class="fas fa-plus"></i> Add Place / Hotel to Day ${dayIdx + 1}
+            </button>
+          </div>
         </div>
       </div>`;
   }).join('');
 
+  // Budget Breakdown Proportions
+  const ticketPct = Math.round((stats.used_budget / (stats.grand_total_cost || 1)) * 100);
+  const transitPct = Math.round((stats.est_transit_cost / (stats.grand_total_cost || 1)) * 100);
+  const foodPct = Math.max(0, 100 - ticketPct - transitPct);
+
   container.innerHTML = `
+    <!-- Top Destination Header -->
     <div class="res-head">
       <div>
         <div class="res-city">${d.city.name} ${d.multiDay ? `${d.daysCount}-Day` : 'Day'} Itinerary</div>
         <div class="res-sub">${d.city.state} · ${d.city.tagline}</div>
+        <div class="res-meta-badges">
+          <span class="res-date-pill"><i class="far fa-calendar-alt"></i> ${dateRangeStr}</span>
+          <span class="res-pace-pill"><i class="fas fa-gauge-high"></i> ${travelPace.toUpperCase()} PACE</span>
+          <span class="res-view-pill" style="background:rgba(30,42,110,.08);color:var(--ind2)"><i class="far fa-clock"></i> Starts at ${formatTime12h(tripStartTime)}</span>
+        </div>
       </div>
       <div class="res-actions">
         <button class="res-act-btn" onclick="window.print()" title="Print or save as PDF"><i class="fas fa-print"></i> Print / PDF</button>
@@ -2033,39 +2305,60 @@ function renderResults(d) {
         <div class="bc-item">
           <div class="bc-lbl"><i class="fas fa-ticket"></i> Monument &amp; Attraction Tickets</div>
           <div class="bc-val">${formatCurrency(stats.used_budget)}</div>
-          <div class="bc-sub">Actual entrance fees for ${stats.count} places</div>
+          <div class="bc-sub">Actual entrance fees for ${stats.count} places (${ticketPct}%)</div>
         </div>
         <div class="bc-item">
           <div class="bc-lbl"><i class="fas fa-taxi"></i> Local Transit (Metro / Autos)</div>
           <div class="bc-val">~${formatCurrency(stats.est_transit_cost)}</div>
-          <div class="bc-sub">Point-to-point travel between stops</div>
+          <div class="bc-sub">Point-to-point travel between stops (${transitPct}%)</div>
         </div>
         <div class="bc-item">
           <div class="bc-lbl"><i class="fas fa-bowl-food"></i> Regional Food &amp; Chai</div>
           <div class="bc-val">~${formatCurrency(stats.est_food_cost)}</div>
-          <div class="bc-sub">Authentic lunches and snacks</div>
+          <div class="bc-sub">Authentic lunches and snacks (${foodPct}%)</div>
         </div>
+      </div>
+      <div class="budget-split-bar" title="Budget Distribution: Tickets ${ticketPct}%, Transit ${transitPct}%, Food ${foodPct}%">
+        <div class="bs-seg tickets" style="width:${ticketPct}%"></div>
+        <div class="bs-seg transit" style="width:${transitPct}%"></div>
+        <div class="bs-seg food" style="width:${foodPct}%"></div>
       </div>
     </div>
 
-    <!-- Multi-Day Navigation Tabs & Timelines -->
+    <!-- View Mode Toolbar & Multi-Day Navigation -->
+    ${d.multiDay ? `
+      <div class="itin-view-bar">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);letter-spacing:.3px">
+          <i class="fas fa-map-location-dot" style="color:var(--sf)"></i> Daily Timeline
+        </div>
+        <div class="view-mode-toggle">
+          <button class="view-btn ${itineraryViewMode === 'tabs' ? 'on' : ''}" onclick="setItineraryViewMode('tabs')">
+            <i class="fas fa-table-columns"></i> Day Tabs
+          </button>
+          <button class="view-btn ${itineraryViewMode === 'all' ? 'on' : ''}" onclick="setItineraryViewMode('all')">
+            <i class="fas fa-layer-group"></i> Full Journey
+          </button>
+        </div>
+      </div>
+    ` : ''}
+
     ${dayTabsHTML}
     ${daysHTML}
 
     <!-- Skipped Items -->
-    ${d.skipped.length ? `
-      <div class="skip-wrap">
+    ${d.skipped && d.skipped.length ? `
+      <div class="skip-wrap" style="margin-top:20px">
         <div class="skip-title">Excluded by Knapsack (Exceeded Time or Budget Constraints)</div>
         <div class="skip-list">${d.skipped.map(s => `<span class="skip-chip">${s.name} (${s.time}h · ${formatCurrency(s.cost)})</span>`).join('')}</div>
       </div>` : ''}
 
     <!-- Algorithm Trace -->
-    <div class="dp-panel">
+    <div class="dp-panel" style="margin-top:20px">
       <div class="dp-title"><i class="fas fa-code"></i> Algorithm Trace — 0/1 Knapsack Dynamic Programming + Spatial TSP</div>
       <span class="dh">dp[${stats.max_time}h][${Math.floor(stats.max_budget / 100)} cells]</span> = <span class="dh2">${stats.score} pts — mathematically guaranteed optimal</span><br>
-      Attractions evaluated: <span class="dh">${d.itinerary.length + d.skipped.length}</span> across ${d.city.name}<br>
+      Attractions evaluated: <span class="dh">${d.itinerary.length + (d.skipped ? d.skipped.length : 0)}</span> across ${d.city.name}<br>
       Routing: <span class="dh2">OSRM Turn-by-Turn Road Engine</span> with Google Maps navigation links<br>
-      Pace Mode: <span class="dh">${travelPace.toUpperCase()}</span> · ₹100 granularity budget cell
+      Pace Mode: <span class="dh">${travelPace.toUpperCase()}</span> · ₹100 granularity budget cell · Departure at ${formatTime12h(tripStartTime)}
     </div>`;
 }
 
@@ -2080,6 +2373,8 @@ function toggleVisited(id) {
   const el = document.getElementById(`itin_stop_${id}`);
   if (el) {
     el.classList.toggle('visited', visitedStopIds.has(id));
+    const chk = el.querySelector('.ic-chk-btn');
+    if (chk) chk.classList.toggle('checked', visitedStopIds.has(id));
   }
 
   if (lastResult && visitedStopIds.size === lastResult.itinerary.length) {
@@ -2088,16 +2383,12 @@ function toggleVisited(id) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   EXPORT: CALENDAR (.ICS) & SHARE
+   EXPORT: CALENDAR (.ICS) WITH EXACT CALENDAR DATES
 ═══════════════════════════════════════════════════════ */
 function exportCalendar() {
   if (!lastResult || !lastResult.itinerary.length) return;
 
-  const today = new Date();
-  const y = today.getFullYear();
-  const m = String(today.getMonth() + 1).padStart(2, '0');
-  const d = String(today.getDate()).padStart(2, '0');
-  const dateStr = `${y}${m}${d}`;
+  const days = lastResult.multiDay ? lastResult.days : [lastResult];
 
   let icsLines = [
     "BEGIN:VCALENDAR",
@@ -2107,21 +2398,29 @@ function exportCalendar() {
     "METHOD:PUBLISH"
   ];
 
-  lastResult.itinerary.forEach((item, idx) => {
-    const sClean = (item.start || "09:00").replace(':', '') + '00';
-    const eClean = (item.end || "11:00").replace(':', '') + '00';
-    icsLines.push(
-      "BEGIN:VEVENT",
-      `UID:yatra-${item.id}-${Date.now()}@yatraapp.io`,
-      `DTSTAMP:${dateStr}T090000Z`,
-      `DTSTART:${dateStr}T${sClean}`,
-      `DTEND:${dateStr}T${eClean}`,
-      `SUMMARY:${item.name} (Stop #${idx + 1} - YatraApp)`,
-      `DESCRIPTION:${item.desc.replace(/,/g, '\\,')}`,
-      `LOCATION:${item.name}\\, ${lastResult.city.name}\\, India`,
-      "STATUS:CONFIRMED",
-      "END:VEVENT"
-    );
+  days.forEach((day, dayIdx) => {
+    const dayDate = getDayDate(dayIdx);
+    const y = dayDate.getFullYear();
+    const m = String(dayDate.getMonth() + 1).padStart(2, '0');
+    const d = String(dayDate.getDate()).padStart(2, '0');
+    const dateStr = `${y}${m}${d}`;
+
+    day.itinerary.forEach((item, idx) => {
+      const sClean = (item.start || "09:00").replace(':', '') + '00';
+      const eClean = (item.end || "11:00").replace(':', '') + '00';
+      icsLines.push(
+        "BEGIN:VEVENT",
+        `UID:yatra-${item.id}-${dateStr}@yatraapp.io`,
+        `DTSTAMP:${dateStr}T090000Z`,
+        `DTSTART:${dateStr}T${sClean}`,
+        `DTEND:${dateStr}T${eClean}`,
+        `SUMMARY:${item.name} (${lastResult.multiDay ? `Day ${dayIdx + 1}` : 'Stop'} #${idx + 1} - YatraApp)`,
+        `DESCRIPTION:${(item.desc || '').replace(/,/g, '\\,')}`,
+        `LOCATION:${item.name}\\, ${lastResult.city.name}\\, India`,
+        "STATUS:CONFIRMED",
+        "END:VEVENT"
+      );
+    });
   });
 
   icsLines.push("END:VCALENDAR");
@@ -2297,6 +2596,8 @@ function toast(msg) {
 window.addEventListener('DOMContentLoaded', () => {
   if (user) setUser(user);
   showHero();
+  initTripDates();
+  setTripDays(tripDays);
 
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {

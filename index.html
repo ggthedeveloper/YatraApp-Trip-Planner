@@ -269,14 +269,42 @@
         <div class="stitle"><i class="fas fa-sliders-h"></i>Trip Planning Options</div>
         <div class="sl-block">
           <!-- Trip Duration -->
-          <div class="sl-row" style="margin-bottom:2px">
+          <div class="sl-row" style="margin-bottom:4px">
             <span class="sl-lbl"><i class="fas fa-calendar-days"></i>Trip Duration</span>
-            <span class="sl-val" id="durVal">1 Day</span>
+            <span class="sl-val" id="durVal">2 Days</span>
           </div>
-          <div class="seg-ctrl" id="durCtrl">
-            <button class="seg-btn on" onclick="setTripDays(1, this)">1 Day</button>
-            <button class="seg-btn" onclick="setTripDays(2, this)">2 Days</button>
-            <button class="seg-btn" onclick="setTripDays(3, this)">3 Days</button>
+          <div class="dur-picker-row">
+            <div class="stepper-wrap">
+              <button type="button" class="stepper-btn" onclick="stepTripDays(-1)" title="Decrease days"><i class="fas fa-minus"></i></button>
+              <input type="number" id="durInput" min="1" max="14" value="2" onchange="onTripDaysInputChange(this.value)" aria-label="Trip Duration in Days">
+              <button type="button" class="stepper-btn" onclick="stepTripDays(1)" title="Increase days"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="dur-preset-pills" id="durPresets">
+              <button type="button" class="dur-pill" data-days="1" onclick="setTripDays(1)">1D</button>
+              <button type="button" class="dur-pill on" data-days="2" onclick="setTripDays(2)">2D</button>
+              <button type="button" class="dur-pill" data-days="3" onclick="setTripDays(3)">3D</button>
+              <button type="button" class="dur-pill" data-days="4" onclick="setTripDays(4)">4D</button>
+              <button type="button" class="dur-pill" data-days="5" onclick="setTripDays(5)">5D</button>
+              <button type="button" class="dur-pill" data-days="7" onclick="setTripDays(7)">7D</button>
+            </div>
+          </div>
+
+          <!-- Trip Dates & Departure Timing -->
+          <div class="dates-timing-row">
+            <div class="field-mini-wrap">
+              <label class="field-mini-lbl" for="tripStartDate"><i class="far fa-calendar"></i> Start Date</label>
+              <input type="date" class="mini-date-input" id="tripStartDate" onchange="onStartDateChange(this.value)">
+            </div>
+            <div class="field-mini-wrap">
+              <label class="field-mini-lbl" for="tripStartTime"><i class="far fa-clock"></i> Daily Start</label>
+              <select class="mini-select-input" id="tripStartTime" onchange="onStartTimeChange(this.value)">
+                <option value="08:00">08:00 AM</option>
+                <option value="08:30">08:30 AM</option>
+                <option value="09:00" selected>09:00 AM</option>
+                <option value="09:30">09:30 AM</option>
+                <option value="10:00">10:00 AM</option>
+              </select>
+            </div>
           </div>
 
           <!-- Travel Pace -->
