@@ -20,8 +20,19 @@
   </div>
   <div class="nav-divider"></div>
   <span class="nav-tag">0/1 Knapsack · DP Optimizer</span>
-  <button class="nbtn nbtn-o" onclick="toggleTheme()">
+  <button class="nbtn nbtn-o" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
     <i class="fas fa-moon"></i>
+  </button>
+  <div class="curr-wrap">
+    <select class="curr-select" id="currSelect" onchange="changeCurrency(this.value)" title="Display Currency">
+      <option value="INR">₹ INR</option>
+      <option value="USD">$ USD</option>
+      <option value="EUR">€ EUR</option>
+      <option value="GBP">£ GBP</option>
+    </select>
+  </div>
+  <button class="nbtn nbtn-o" onclick="openSafetyModal()" title="Tourist Helpline & Travel Essentials">
+    <i class="fas fa-shield-heart"></i> Safety
   </button>
   <div class="nav-right" id="navAuth">
     <button class="nbtn nbtn-o" onclick="openGate('login')">Sign In</button>
@@ -255,20 +266,45 @@
         </div>
       </div>
       <div>
-        <div class="stitle"><i class="fas fa-sliders-h"></i>Constraints</div>
+        <div class="stitle"><i class="fas fa-sliders-h"></i>Trip Planning Options</div>
         <div class="sl-block">
-          <div class="sl-row">
-            <span class="sl-lbl"><i class="far fa-clock"></i>Time Available</span>
-            <span class="sl-val" id="tVal">8h</span>
+          <!-- Trip Duration -->
+          <div class="sl-row" style="margin-bottom:2px">
+            <span class="sl-lbl"><i class="fas fa-calendar-days"></i>Trip Duration</span>
+            <span class="sl-val" id="durVal">1 Day</span>
+          </div>
+          <div class="seg-ctrl" id="durCtrl">
+            <button class="seg-btn on" onclick="setTripDays(1, this)">1 Day</button>
+            <button class="seg-btn" onclick="setTripDays(2, this)">2 Days</button>
+            <button class="seg-btn" onclick="setTripDays(3, this)">3 Days</button>
+          </div>
+
+          <!-- Travel Pace -->
+          <div class="sl-row" style="margin-top:10px;margin-bottom:2px">
+            <span class="sl-lbl"><i class="fas fa-gauge-high"></i>Travel Pace</span>
+            <span class="sl-val" id="paceVal">Balanced</span>
+          </div>
+          <div class="seg-ctrl" id="paceCtrl">
+            <button class="seg-btn" onclick="setTravelPace('relaxed', this)">Relaxed</button>
+            <button class="seg-btn on" onclick="setTravelPace('balanced', this)">Balanced</button>
+            <button class="seg-btn" onclick="setTravelPace('packed', this)">Packed</button>
+          </div>
+
+          <!-- Daily Time Constraint -->
+          <div class="sl-row" style="margin-top:12px">
+            <span class="sl-lbl"><i class="far fa-clock"></i>Daily Sightseeing Hours</span>
+            <span class="sl-val" id="tVal">8h/day</span>
           </div>
           <input type="range" id="tSlider" min="2" max="16" value="8" step="1"
-            oninput="document.getElementById('tVal').textContent=this.value+'h'">
+            oninput="updateTimeSliderDisplay(this.value)">
+
+          <!-- Total Budget Constraint -->
           <div class="sl-row" style="margin-top:8px">
-            <span class="sl-lbl"><i class="fas fa-rupee-sign"></i>Budget</span>
+            <span class="sl-lbl"><i class="fas fa-wallet"></i>Trip Budget</span>
             <span class="sl-val" id="bVal">₹2,000</span>
           </div>
-          <input type="range" id="bSlider" min="200" max="10000" value="2000" step="100"
-            oninput="document.getElementById('bVal').textContent='₹'+Number(this.value).toLocaleString('en-IN')">
+          <input type="range" id="bSlider" min="200" max="25000" value="2000" step="100"
+            oninput="updateBudgetSliderDisplay(this.value)">
         </div>
       </div>
       <div class="lbar" id="lbar"></div>
@@ -311,6 +347,7 @@
             <button class="cat-pill" onclick="setCategoryFilter('Food', this)"><i class="fas fa-utensils"></i> Food</button>
             <button class="cat-pill" onclick="setCategoryFilter('Scenic', this)"><i class="fas fa-camera"></i> Scenic</button>
             <button class="cat-pill" onclick="setCategoryFilter('Shopping', this)"><i class="fas fa-bag-shopping"></i> Shopping</button>
+            <button class="cat-pill custom-add-pill" onclick="openAddPlaceModal()"><i class="fas fa-plus"></i> Add Place / Hotel</button>
           </div>
         </div>
         <div class="cards" id="cardsArea"></div>
@@ -347,6 +384,92 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════ ADD CUSTOM PLACE / HOTEL MODAL ═══════════ -->
+<div class="ov" id="addPlaceOv">
+  <div class="profile-card">
+    <button class="gate-close" onclick="closeAddPlaceModal()"><i class="fas fa-times"></i></button>
+    <div class="profile-hd">Add Custom Place / Hotel</div>
+    <div class="profile-desc">Add your accommodation, cafe, or custom destination to optimize into your trip.</div>
+    <div class="fg">
+      <label class="fl">Place Name / Hotel</label>
+      <input class="fi" id="cpName" type="text" placeholder="e.g. The Imperial Hotel or Blue Tokai Cafe">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg">
+        <label class="fl">Time Required (Hours)</label>
+        <input class="fi" id="cpTime" type="number" min="1" max="6" value="2">
+      </div>
+      <div class="fg">
+        <label class="fl">Cost / Expense (<span class="curr-symbol">₹</span>)</label>
+        <input class="fi" id="cpCost" type="number" min="0" max="50000" value="0">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Category</label>
+      <select class="fi" id="cpCat">
+        <option value="Hotel & Stay">Hotel &amp; Stay</option>
+        <option value="Heritage">Heritage</option>
+        <option value="Food">Food &amp; Dining</option>
+        <option value="Shopping">Shopping</option>
+        <option value="Scenic">Scenic</option>
+        <option value="Culture">Culture</option>
+      </select>
+    </div>
+    <div class="fg" style="margin-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer">
+        <input type="checkbox" id="cpPin" checked style="width:16px;height:16px;accent-color:var(--sf)">
+        <span>⭐ Pin as MUST-VISIT in my itinerary</span>
+      </label>
+    </div>
+    <button class="bfull bsf" onclick="saveCustomPlace()" style="margin-top:14px">
+      <i class="fas fa-plus"></i> Add to My Attractions
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════ SAFETY & ESSENTIALS MODAL ═══════════ -->
+<div class="ov" id="safetyOv">
+  <div class="profile-card" style="width:580px">
+    <button class="gate-close" onclick="closeSafetyModal()"><i class="fas fa-times"></i></button>
+    <div class="profile-hd"><i class="fas fa-shield-heart" style="color:var(--ruby);font-size:22px;margin-right:6px"></i> Safety &amp; Essentials</div>
+    <div class="profile-desc">Emergency helplines and practical traveler checklist for India.</div>
+
+    <!-- Helplines Grid -->
+    <div class="safety-grid">
+      <div class="safety-item">
+        <div class="safety-num">1363</div>
+        <div class="safety-lbl">Tourist Helpline (24/7 Multilingual)</div>
+      </div>
+      <div class="safety-item">
+        <div class="safety-num">112</div>
+        <div class="safety-lbl">National Emergency Services</div>
+      </div>
+      <div class="safety-item">
+        <div class="safety-num">1091</div>
+        <div class="safety-lbl">Women's Safety Helpline</div>
+      </div>
+      <div class="safety-item">
+        <div class="safety-num">108</div>
+        <div class="safety-lbl">Emergency Ambulance</div>
+      </div>
+    </div>
+
+    <!-- Practical Essentials Checklist -->
+    <div style="font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:18px 0 8px">
+      <i class="fas fa-clipboard-check" style="color:var(--sf)"></i> Traveler Essentials Checklist
+    </div>
+    <div class="checklist-box" id="checklistContainer">
+      <label class="chk-item"><input type="checkbox" onchange="saveChecklistState()"> <span>Government Photo ID / Passport copy on phone</span></label>
+      <label class="chk-item"><input type="checkbox" onchange="saveChecklistState()"> <span>Local Metro Smart Card or UPI payment app</span></label>
+      <label class="chk-item"><input type="checkbox" onchange="saveChecklistState()"> <span>Light scarf/shawl for covering head in temples/dargahs</span></label>
+      <label class="chk-item"><input type="checkbox" onchange="saveChecklistState()"> <span>Refillable filtered water bottle and ORS packets</span></label>
+      <label class="chk-item"><input type="checkbox" onchange="saveChecklistState()"> <span>Small cash (₹50, ₹100 notes) for e-rickshaws and temple footwear counters</span></label>
+    </div>
+
+    <button class="bfull nbtn-o" onclick="closeSafetyModal()" style="margin-top:16px">Close</button>
   </div>
 </div>
 

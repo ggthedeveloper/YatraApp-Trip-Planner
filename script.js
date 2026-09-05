@@ -580,15 +580,61 @@ const CITY_FLAGS = {
   goa: '🏖️'
 };
 
+/* ═══════════════════════════════════════════════════════
+   CURRENCIES & REAL-TIME CONVERSION
+═══════════════════════════════════════════════════════ */
+const CURRENCIES = {
+  INR: { symbol: '₹', rate: 1, code: 'INR' },
+  USD: { symbol: '$', rate: 0.0118, code: 'USD' },
+  EUR: { symbol: '€', rate: 0.0109, code: 'EUR' },
+  GBP: { symbol: '£', rate: 0.00925, code: 'GBP' }
+};
+let currentCurrency = 'INR';
+
+function formatCurrency(inrAmount) {
+  if (inrAmount === 0) return 'Free';
+  const c = CURRENCIES[currentCurrency] || CURRENCIES.INR;
+  const converted = Math.round(inrAmount * c.rate);
+  if (currentCurrency === 'INR') {
+    return '₹' + inrAmount.toLocaleString('en-IN');
+  }
+  return `${c.symbol}${converted.toLocaleString('en-US')}`;
+}
+
+function changeCurrency(curr) {
+  currentCurrency = curr;
+  const sym = CURRENCIES[curr].symbol;
+  document.querySelectorAll('.curr-symbol').forEach(el => el.textContent = sym);
+  updateBudgetSliderDisplay(document.getElementById('bSlider').value);
+  renderCards();
+  if (lastResult) renderResults(lastResult);
+  if (document.getElementById('tp-trips').classList.contains('on')) loadTrips();
+}
+
+function updateBudgetSliderDisplay(val) {
+  document.getElementById('bVal').textContent = formatCurrency(Number(val));
+}
+
+function updateTimeSliderDisplay(val) {
+  const durSuffix = tripDays > 1 ? `h/day (${val * tripDays}h total)` : 'h';
+  document.getElementById('tVal').textContent = `${val}${durSuffix}`;
+}
+
 /* ═══ STATE ═══ */
 let user = JSON.parse(localStorage.getItem('yatraUser') || 'null');
 let activeCity = 'delhi';
 let lastResult = null;
+let activeResultDay = 0; // 0 = Day 1, 1 = Day 2, etc.
+
 let mapI = null;
 let mapMarkers = [];
-let mapPolyline = null;
+let mapPolylines = [];
 let isDarkMap = false;
 let currentBasemapLayer = null;
+
+// Multi-Day & Pace State
+let tripDays = 1;
+let travelPace = 'balanced';
 
 // Search, Filter & Pinning State
 let currentCategory = 'all';
@@ -612,9 +658,7 @@ function toggleTheme() {
   document.body.classList.toggle('dark');
   const isDark = document.body.classList.contains('dark');
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  if (mapI) {
-    setMapBasemap(isDark);
-  }
+  if (mapI) setMapBasemap(isDark);
 }
 
 function openGate(tab) {
@@ -790,6 +834,7 @@ function initApp() {
   appReady = true;
   renderCityGrid();
   loadCity(activeCity || 'delhi');
+  loadChecklistState();
 }
 
 function renderCityGrid() {
@@ -834,7 +879,7 @@ function loadCity(k) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   LIVE WEATHER INTEGRATION (Free Open-Meteo API)
+   LIVE WEATHER INTEGRATION (Open-Meteo Free API)
 ═══════════════════════════════════════════════════════ */
 const WMO_CODES = {
   0: { label: "Sunny / Clear Sky", icon: "fa-sun", tip: "Bright clear skies — wear sunscreen and sunglasses." },
@@ -881,15 +926,33 @@ async function fetchCityWeather(cityKey) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   MULTI-DAY PLANNING & TRAVEL PACE CONTROLS
+═══════════════════════════════════════════════════════ */
+function setTripDays(days, btn) {
+  tripDays = days;
+  document.querySelectorAll('#durCtrl .seg-btn').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  document.getElementById('durVal').textContent = `${days} Day${days > 1 ? 's' : ''}`;
+  updateTimeSliderDisplay(document.getElementById('tSlider').value);
+  toast(`Trip duration set to ${days} Day${days > 1 ? 's' : ''}`);
+}
+
+function setTravelPace(pace, btn) {
+  travelPace = pace;
+  document.querySelectorAll('#paceCtrl .seg-btn').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  const label = pace.charAt(0).toUpperCase() + pace.slice(1);
+  document.getElementById('paceVal').textContent = label;
+  toast(`Travel pace set to ${label}`);
+}
+
+/* ═══════════════════════════════════════════════════════
    ATTRACTION CARDS, SEARCH & FILTER
 ═══════════════════════════════════════════════════════ */
-function inr(n) { return n === 0 ? 'Free' : '₹' + n.toLocaleString('en-IN'); }
-
 function renderCards() {
   const city = CITIES[activeCity];
   const container = document.getElementById('cardsArea');
 
-  // Filter pool by category and search query
   const filtered = city.attractions.filter(a => {
     const matchesCat = (currentCategory === 'all') || (a.cat.toLowerCase() === currentCategory.toLowerCase());
     const q = searchQuery.toLowerCase().trim();
@@ -926,7 +989,7 @@ function renderCards() {
         <div class="ac-desc">${a.desc}</div>
         <div class="ac-foot">
           <span class="chip ct"><i class="far fa-clock"></i>${a.time}h</span>
-          <span class="chip cc2"><i class="fas fa-rupee-sign"></i>${inr(a.cost)}</span>
+          <span class="chip cc2"><i class="fas fa-tag"></i>${formatCurrency(a.cost)}</span>
           <span class="chip cs"><i class="fas fa-star"></i>${a.score}</span>
           <button class="info-btn"
             onclick="event.stopPropagation();openPP('${activeCity}','${a.id}')"
@@ -987,6 +1050,91 @@ function clearSearch() {
 }
 
 /* ═══════════════════════════════════════════════════════
+   CUSTOM PLACE / HOTEL ADDITION MODAL
+═══════════════════════════════════════════════════════ */
+function openAddPlaceModal() {
+  document.getElementById('addPlaceOv').classList.add('on');
+  setTimeout(() => document.getElementById('cpName')?.focus(), 200);
+}
+
+function closeAddPlaceModal() {
+  document.getElementById('addPlaceOv').classList.remove('on');
+}
+
+function saveCustomPlace() {
+  const name = document.getElementById('cpName').value.trim();
+  const time = parseFloat(document.getElementById('cpTime').value) || 2;
+  const cost = parseInt(document.getElementById('cpCost').value) || 0;
+  const cat = document.getElementById('cpCat').value;
+  const pin = document.getElementById('cpPin').checked;
+
+  if (!name) {
+    toast('Please enter a place name or hotel');
+    return;
+  }
+
+  const city = CITIES[activeCity];
+  // Slightly randomize position near city center
+  const latOffset = (Math.random() - 0.5) * 0.04;
+  const lngOffset = (Math.random() - 0.5) * 0.04;
+
+  const newPlace = {
+    id: 'cp_' + Date.now(),
+    name,
+    time: Math.max(1, time),
+    cost: Math.max(0, cost),
+    score: 95,
+    cat,
+    lat: city.coords[0] + latOffset,
+    lng: city.coords[1] + lngOffset,
+    hours: "Flexible / Guest Preference",
+    bestTime: "According to your trip schedule",
+    dress: "Casual",
+    metro: "Local Auto / Taxi available",
+    desc: `Custom place added by you in ${city.name}. Included in your personalized itinerary.`,
+    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200&auto=format&fit=crop"
+  };
+
+  city.attractions.unshift(newPlace);
+  if (pin) {
+    pinnedAttractionIds.add(newPlace.id);
+  }
+  selectedAttractionIds.add(newPlace.id);
+
+  closeAddPlaceModal();
+  document.getElementById('cpName').value = '';
+  renderCards();
+  toast(`Added "${name}" to ${city.name} attractions!`);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SAFETY & TOURIST ESSENTIALS MODAL
+═══════════════════════════════════════════════════════ */
+function openSafetyModal() {
+  document.getElementById('safetyOv').classList.add('on');
+}
+
+function closeSafetyModal() {
+  document.getElementById('safetyOv').classList.remove('on');
+}
+
+function saveChecklistState() {
+  const boxes = document.querySelectorAll('#checklistContainer input[type=checkbox]');
+  const state = Array.from(boxes).map(b => b.checked);
+  localStorage.setItem('yatraChecklist', JSON.stringify(state));
+}
+
+function loadChecklistState() {
+  try {
+    const state = JSON.parse(localStorage.getItem('yatraChecklist') || '[]');
+    const boxes = document.querySelectorAll('#checklistContainer input[type=checkbox]');
+    boxes.forEach((b, i) => {
+      if (state[i] !== undefined) b.checked = state[i];
+    });
+  } catch (e) { }
+}
+
+/* ═══════════════════════════════════════════════════════
    PLACE PANEL & WEB SPEECH AUDIO GUIDE
 ═══════════════════════════════════════════════════════ */
 let currentPlace = null;
@@ -1006,23 +1154,20 @@ function openPP(cityKey, id) {
 
   document.getElementById('ppChips').innerHTML = `
     <span class="chip ct" style="font-size:11px"><i class="far fa-clock"></i>${a.time}h visit</span>
-    <span class="chip cc2" style="font-size:11px"><i class="fas fa-rupee-sign"></i>${inr(a.cost)}</span>
+    <span class="chip cc2" style="font-size:11px"><i class="fas fa-tag"></i>${formatCurrency(a.cost)}</span>
     <span class="chip cs" style="font-size:11px"><i class="fas fa-star"></i>${a.score}/100</span>`;
 
-  // Practical details
   document.getElementById('ppHours').textContent = a.hours || "09:00 AM – 05:30 PM";
   document.getElementById('ppBestTime').textContent = a.bestTime || "Early morning or golden hour";
   document.getElementById('ppDress').textContent = a.dress || "Modest, comfortable walking clothes";
   document.getElementById('ppMetro').textContent = a.metro || "Local Auto / Taxi available";
 
-  // Score ring
   const pct = a.score;
   document.getElementById('ppRing').style.background =
     `conic-gradient(#E8590A ${pct * 3.6}deg, #DDD0BA 0deg)`;
   document.getElementById('ppScore').textContent = a.score;
   document.getElementById('ppScoreGrade').textContent = a.score >= 95 ? 'Outstanding ' : a.score >= 85 ? 'Excellent ' : a.score >= 75 ? 'Very Good ' : 'Good ';
 
-  // Authentic Local Insider Tip
   const tipText = getAuthenticTip(a.name, city.name);
   document.getElementById('ppTip').textContent = tipText;
 
@@ -1051,7 +1196,7 @@ function playAudioGuide() {
 
   const city = CITIES[activeCity];
   const tip = getAuthenticTip(currentPlace.name, city.name);
-  const speechText = `Welcome to ${currentPlace.name} in ${city.name}. ${currentPlace.desc}. Practical tip: ${tip}`;
+  const speechText = `Welcome to ${currentPlace.name} in ${city.name}. ${currentPlace.desc}. Practical travel tip: ${tip}`;
 
   currentUtterance = new SpeechSynthesisUtterance(speechText);
   currentUtterance.rate = 0.95;
@@ -1079,7 +1224,6 @@ function stopAudioGuide() {
 }
 
 const AUTHENTIC_TIPS = {
-  // Delhi
   "Red Fort": "Book your tickets online at the ASI portal to bypass the 40-minute ticket queues at Lahore Gate. The weekend evening Sound & Light show is breathtaking.",
   "Qutub Minar": "Enter right at 7:00 AM opening to photograph the victory tower without crowds in gorgeous soft morning light.",
   "Akshardham Temple": "Cameras and phones are strictly barred. Deposit them in cloakrooms early and stay until 7:15 PM for the Sahaj Anand musical fountain show.",
@@ -1091,7 +1235,6 @@ const AUTHENTIC_TIPS = {
   "Lodi Gardens": "Enter via gate 1 near Jor Bagh for the most scenic morning walk across Athpula Bridge with rose garden blooms.",
   "Dilli Haat": "Every stall rotates state artisans every 15 days. Try the momos and fruit beer at the Sikkim stall, or litti chokha at the Bihar stall.",
 
-  // Jaipur
   "Amber Fort": "Hire an official RTDC guide at the ticket window. Take the Maota Lake rear pathway for dramatic fort reflections.",
   "Hawa Mahal": "The most iconic photos are taken from the rooftop cafes (Wind View Cafe or Tattoo Cafe) right across the street in early morning sunlight.",
   "City Palace": "Opt for the composite ticket which includes Jantar Mantar and Jaigarh Fort to save money and hassle.",
@@ -1103,7 +1246,6 @@ const AUTHENTIC_TIPS = {
   "Galtaji Temple": "Keep all snacks, prasad, and sunglasses concealed in zipped bags, as the resident macaque monkeys are adept at snatching loose items.",
   "Johari Bazaar": "Bargain respectfully. For verified silver and certified gemstone jewelry, visit Gopalji Ka Rasta alley.",
 
-  // Mumbai
   "Elephanta Caves": "Book the deluxe upper deck on the 9:00 AM first ferry from Gateway. Carry a hat and water for the 120 stone steps up.",
   "Gateway of India": "Best viewed at sunrise (6:30 AM) when the harbor is tranquil and the Taj Mahal Palace Hotel glows in morning gold.",
   "CSMVS Museum": "Rent the multilingual audio guide at the reception desk; the museum palm gardens also host an outdoor cafe and art shop.",
@@ -1115,7 +1257,6 @@ const AUTHENTIC_TIPS = {
   "Colaba Causeway": "Walk down past Leopold Cafe into the shaded antique lanes behind the Taj Hotel for authentic brass curios and vintage posters.",
   "Juhu Beach": "Head to the food plaza near the main entrance for piping hot Mumbai pav bhaji served with melted Amul butter.",
 
-  // Varanasi
   "Dashashwamedh Aarti": "Hire a shared or private wooden boat by 5:30 PM to watch the ritual comfortably from the river without being crushed in crowds.",
   "Sunrise Boat Ride": "Negotiate the fare the evening before with a local boatman at Assi Ghat. A rowboat (not noisy motorboat) offers the true spiritual vibe.",
   "Kashi Vishwanath Temple": "Store your mobile phones, leather wallets, and belts in your hotel or verified lockers outside before entering the corridor.",
@@ -1127,7 +1268,6 @@ const AUTHENTIC_TIPS = {
   "BHU Campus & Vishwanath Temple": "Taste the fresh cold lassi at the VT temple complex and walk through the tranquil tree-canopied lanes of the university.",
   "Old City Food & Alley Walk": "Try the famous winter malaiyyo (saffron milk froth), followed by a sweet Banarasi Meetha Paan near Godowlia.",
 
-  // Kerala
   "Alleppey Houseboat Cruise": "Always verify that your boat has a valid DTPC government green certification before stepping aboard at the jetty.",
   "Munnar Tea Plantations": "Take the scenic gap road drive towards Kolukkumalai for the world's highest organic tea plantations and cloud walks.",
   "Periyar Wildlife Safari": "Book the 07:30 AM first boat safari on the official Periyar Tiger Reserve portal for the greatest chance of spotting wild elephants.",
@@ -1139,7 +1279,6 @@ const AUTHENTIC_TIPS = {
   "Spice Plantation Tour": "Rub and sniff fresh crushed allspice and cardamom leaves on the trail, and pick up vacuum-sealed farm spices at local prices.",
   "Chinese Fishing Nets": "The fishermen will warmly invite you to help pull the counterweight ropes — a tip of ₹50-₹100 is customary and appreciated.",
 
-  // Goa
   "Baga Beach": "Visit before 10:00 AM for clean sands, or after 6:00 PM for candlelit tables right on the water edge with fresh grilled kingfish.",
   "Basilica of Bom Jesus": "Visit in the morning before tourist buses arrive from Panjim. Silence is strictly observed inside the sacred sanctuary.",
   "Dudhsagar Waterfalls": "Wear life jackets provided by the forest department at the pool; swimming near the roaring spray is an unforgettable rush.",
@@ -1157,11 +1296,13 @@ function getAuthenticTip(placeName, cityName) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   MAP & ROUTE VISUALIZATION (Leaflet.js)
+   MAP & REAL ROAD ROUTING (Leaflet + OSRM Driving Engine)
 ═══════════════════════════════════════════════════════ */
 const LIGHT_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const TILE_ATTR = '© <a href="https://carto.com/">CARTO</a>, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+const DAY_COLORS = ['#E8590A', '#1A7A4A', '#1E2A6E']; // Saffron, Emerald, Navy
 
 function initOrGetMap() {
   const city = CITIES[activeCity];
@@ -1201,59 +1342,98 @@ function fitMapBounds() {
   mapI.fitBounds(group.getBounds().pad(0.15));
 }
 
-function updateMap() {
+// Fetch actual street road geometry via OSRM public routing API
+async function fetchRoadRouteGeometry(places) {
+  if (places.length < 2) return null;
+  const coordStr = places.map(p => `${p.lng},${p.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4000); // 4s timeout
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.code === 'Ok' && data.routes && data.routes[0]) {
+      // GeoJSON is [lng, lat] -> Leaflet wants [lat, lng]
+      return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    }
+  } catch (e) {
+    // Graceful fallback to geodesic line
+  }
+  return null;
+}
+
+async function updateMap() {
   const city = CITIES[activeCity];
   initOrGetMap();
   mapI.setView(city.coords, 12);
 
-  // Clear existing markers & route
   mapMarkers.forEach(m => m.remove());
   mapMarkers = [];
-  if (mapPolyline) {
-    mapPolyline.remove();
-    mapPolyline = null;
-  }
+  mapPolylines.forEach(p => p.remove());
+  mapPolylines = [];
 
-  // If there's an active itinerary for this city, draw sequential numbered route!
-  if (lastResult && lastResult.city.name === city.name && lastResult.itinerary.length) {
-    const itinerary = lastResult.itinerary;
-    const latlngs = itinerary.map(a => [a.lat, a.lng]);
+  if (lastResult && lastResult.city.name === city.name) {
+    const days = lastResult.multiDay ? lastResult.days : [lastResult];
 
-    // Draw route Polyline
-    mapPolyline = L.polyline(latlngs, {
-      color: '#E8590A',
-      weight: 4,
-      opacity: 0.85,
-      dashArray: '8, 8',
-      lineJoin: 'round'
-    }).addTo(mapI);
+    for (let dIdx = 0; dIdx < days.length; dIdx++) {
+      const dayData = days[dIdx];
+      const itin = dayData.itinerary;
+      if (!itin.length) continue;
 
-    // Numbered Stop Markers
-    itinerary.forEach((a, idx) => {
-      const stepNum = idx + 1;
-      const icon = L.divIcon({
-        className: '',
-        html: `<div style="background:#E8590A;color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:3px solid #fff;box-shadow:0 3px 14px rgba(232,89,10,.55);cursor:pointer">${stepNum}</div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+      const dayCol = DAY_COLORS[dIdx % DAY_COLORS.length];
+      const straightCoords = itin.map(a => [a.lat, a.lng]);
+
+      // Try fetching real road network curves
+      const roadCoords = await fetchRoadRouteGeometry(itin);
+      const routePoints = roadCoords || straightCoords;
+
+      const poly = L.polyline(routePoints, {
+        color: dayCol,
+        weight: 5,
+        opacity: 0.85,
+        dashArray: roadCoords ? null : '8, 8',
+        lineJoin: 'round'
+      }).addTo(mapI);
+      mapPolylines.push(poly);
+
+      // Numbered Stop Markers for this day
+      itin.forEach((a, idx) => {
+        const stepNum = idx + 1;
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="background:${dayCol};color:#fff;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:3px solid #fff;box-shadow:0 3px 14px rgba(0,0,0,.35);cursor:pointer">${days.length > 1 ? `D${dIdx + 1}.${stepNum}` : stepNum}</div>`,
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
+        });
+        const m = L.marker([a.lat, a.lng], { icon }).addTo(mapI);
+        m.bindPopup(`
+          <div class="mpop">
+            <div style="font-size:10px;font-weight:700;color:${dayCol};text-transform:uppercase">
+              ${days.length > 1 ? `Day ${dIdx + 1} · ` : ''}Stop ${stepNum} · ${a.start} - ${a.end}
+            </div>
+            <div class="mpop-name">${a.name}</div>
+            <div class="mpop-chips">
+              <span class="chip ct" style="font-size:10px"><i class="far fa-clock"></i>${a.time}h</span>
+              <span class="chip cc2" style="font-size:10px">${formatCurrency(a.cost)}</span>
+            </div>
+            <div style="margin-top:6px">
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name + ' ' + city.name)}"
+                 target="_blank" class="gmaps-link">
+                 <i class="fas fa-arrow-up-right-from-square"></i> Open Google Maps
+              </a>
+            </div>
+          </div>`);
+        m.on('click', () => openPP(activeCity, a.id));
+        mapMarkers.push(m);
       });
-      const m = L.marker([a.lat, a.lng], { icon }).addTo(mapI);
-      m.bindPopup(`
-        <div class="mpop">
-          <div style="font-size:10px;font-weight:700;color:var(--sf);text-transform:uppercase">Stop ${stepNum} · ${a.start} - ${a.end}</div>
-          <div class="mpop-name">${a.name}</div>
-          <div class="mpop-chips">
-            <span class="chip ct" style="font-size:10px"><i class="far fa-clock"></i>${a.time}h</span>
-            <span class="chip cc2" style="font-size:10px">${inr(a.cost)}</span>
-          </div>
-        </div>`);
-      m.on('click', () => openPP(activeCity, a.id));
-      mapMarkers.push(m);
-    });
+    }
 
-    // Unselected attractions as muted small markers
-    const itinIds = new Set(itinerary.map(x => x.id));
-    city.attractions.filter(a => !itinIds.has(a.id)).forEach(a => {
+    // Unselected attractions
+    const allItinIds = new Set(days.flatMap(d => d.itinerary.map(x => x.id)));
+    city.attractions.filter(a => !allItinIds.has(a.id)).forEach(a => {
       const icon = L.divIcon({
         className: '',
         html: `<div style="background:#bbb;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer;opacity:.7">×</div>`,
@@ -1268,7 +1448,7 @@ function updateMap() {
 
     fitMapBounds();
   } else {
-    // City overview (all attractions)
+    // City overview
     city.attractions.forEach(a => {
       const col = a.score >= 90 ? '#E8590A' : a.score >= 80 ? '#D4A017' : '#1E2A6E';
       const icon = L.divIcon({
@@ -1283,7 +1463,13 @@ function updateMap() {
           <div class="mpop-name">${a.name}</div>
           <div class="mpop-chips">
             <span class="chip ct" style="font-size:10px"><i class="far fa-clock"></i>${a.time}h</span>
-            <span class="chip cc2" style="font-size:10px">${inr(a.cost)}</span>
+            <span class="chip cc2" style="font-size:10px">${formatCurrency(a.cost)}</span>
+          </div>
+          <div style="margin-top:6px">
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.name + ' ' + city.name)}"
+               target="_blank" class="gmaps-link">
+               <i class="fas fa-arrow-up-right-from-square"></i> Open Google Maps
+            </a>
           </div>
         </div>`);
       m.on('click', () => openPP(activeCity, a.id));
@@ -1318,8 +1504,19 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 
 function calculateTransit(a1, a2) {
   const dist = haversineDistance(a1.lat, a1.lng, a2.lat, a2.lng);
-  // Realistic Indian urban transit: ~25 km/h avg speed + 10 min parking/waiting buffer
-  const mins = Math.max(15, Math.min(60, Math.round(dist * 2.8)));
+
+  // Pace factors
+  let speedMultiplier = 2.8;
+  let minMinutes = 15;
+  if (travelPace === 'relaxed') {
+    speedMultiplier = 3.5;
+    minMinutes = 25;
+  } else if (travelPace === 'packed') {
+    speedMultiplier = 2.2;
+    minMinutes = 10;
+  }
+
+  const mins = Math.max(minMinutes, Math.min(60, Math.round(dist * speedMultiplier)));
   const cost = Math.max(50, Math.round(dist * 18));
   let mode = "Auto / Taxi";
   if (dist <= 1.5) mode = "Short Walk / E-Rickshaw";
@@ -1329,12 +1526,16 @@ function calculateTransit(a1, a2) {
     distKm: dist.toFixed(1),
     minutes: mins,
     estCost: cost,
-    mode
+    mode,
+    originLat: a1.lat,
+    originLng: a1.lng,
+    destLat: a2.lat,
+    destLng: a2.lng
   };
 }
 
 /* ═══════════════════════════════════════════════════════
-   0/1 KNAPSACK DP WITH PINNED MUST-VISIT ATTRACTIONS
+   0/1 KNAPSACK DP WITH SPATIAL MULTI-DAY CLUSTERING
 ═══════════════════════════════════════════════════════ */
 function knapsack(items, maxT, maxB, bucket = 100) {
   const n = items.length, B = Math.floor(maxB / bucket), T = maxT;
@@ -1345,7 +1546,7 @@ function knapsack(items, maxT, maxB, bucket = 100) {
   const idx = (t, b) => t * (B + 1) + b;
 
   for (let i = 0; i < n; i++) {
-    const it = items[i].time;
+    const it = Math.max(1, Math.round(items[i].time * (travelPace === 'relaxed' ? 1.25 : travelPace === 'packed' ? 0.85 : 1.0)));
     const ib = Math.ceil(items[i].cost / bucket);
     const iv = items[i].score;
     for (let t = T; t >= it; t--) {
@@ -1363,157 +1564,225 @@ function knapsack(items, maxT, maxB, bucket = 100) {
   for (let i = n - 1; i >= 0; i--) {
     if (keep[i][idx(t, b)]) {
       chosen.unshift(i);
-      t -= items[i].time;
+      const it = Math.max(1, Math.round(items[i].time * (travelPace === 'relaxed' ? 1.25 : travelPace === 'packed' ? 0.85 : 1.0)));
+      t -= it;
       b -= Math.ceil(items[i].cost / bucket);
     }
   }
   return { chosen, totalScore: dp[T][B] };
 }
 
-/* ═══ RUN OPTIMIZER ═══ */
+function generateSingleDaySchedule(picked, city, dayIndex = 0) {
+  let currentMinutes = 9 * 60; // 09:00 AM
+  let hadLunch = false;
+  const scheduled = [];
+
+  for (let i = 0; i < picked.length; i++) {
+    const place = picked[i];
+    const durationHours = Math.max(1, Math.round(place.time * (travelPace === 'relaxed' ? 1.25 : travelPace === 'packed' ? 0.85 : 1.0)));
+
+    // Mid-day authentic lunch window
+    if (!hadLunch && currentMinutes >= (13 * 60 - 30) && (currentMinutes + durationHours * 60) > (13 * 60 + 45)) {
+      hadLunch = true;
+      const lStartH = Math.floor(currentMinutes / 60);
+      const lStartM = currentMinutes % 60;
+      currentMinutes += 60; // 1 hr lunch
+      const lEndH = Math.floor(currentMinutes / 60);
+      const lEndM = currentMinutes % 60;
+
+      scheduled.push({
+        isLunch: true,
+        title: "Authentic Regional Lunch Break",
+        dish: city.foodRec.dish,
+        area: city.foodRec.area,
+        desc: city.foodRec.desc,
+        start: `${lStartH.toString().padStart(2, '0')}:${lStartM.toString().padStart(2, '0')}`,
+        end: `${lEndH.toString().padStart(2, '0')}:${lEndM.toString().padStart(2, '0')}`
+      });
+    }
+
+    let transitInfo = null;
+    if (scheduled.length > 0) {
+      const prevPlaces = scheduled.filter(x => !x.isLunch);
+      if (prevPlaces.length > 0) {
+        const prevPlace = prevPlaces[prevPlaces.length - 1];
+        transitInfo = calculateTransit(prevPlace, place);
+        currentMinutes += transitInfo.minutes;
+      }
+    }
+
+    const sH = Math.floor(currentMinutes / 60);
+    const sM = currentMinutes % 60;
+    currentMinutes += durationHours * 60;
+    const eH = Math.floor(currentMinutes / 60);
+    const eM = currentMinutes % 60;
+
+    scheduled.push({
+      ...place,
+      durationHours,
+      transitBefore: transitInfo,
+      start: `${sH.toString().padStart(2, '0')}:${sM.toString().padStart(2, '0')}`,
+      end: `${eH.toString().padStart(2, '0')}:${eM.toString().padStart(2, '0')}`
+    });
+  }
+
+  const realAttractions = scheduled.filter(x => !x.isLunch);
+  const transits = scheduled.filter(x => x.transitBefore);
+  const ticketBudget = realAttractions.reduce((s, a) => s + a.cost, 0);
+  const estTransitCost = transits.reduce((s, x) => s + x.transitBefore.estCost, 0);
+  const estFoodCost = realAttractions.length > 0 ? 450 : 0;
+  const grandTotalCost = ticketBudget + estTransitCost + estFoodCost;
+  const usedTime = realAttractions.reduce((s, a) => s + a.durationHours, 0);
+  const totalScore = realAttractions.reduce((s, a) => s + a.score, 0);
+
+  return {
+    dayNum: dayIndex + 1,
+    itinerary: realAttractions,
+    fullSchedule: scheduled,
+    stats: {
+      score: totalScore,
+      count: realAttractions.length,
+      used_time: usedTime,
+      used_budget: ticketBudget,
+      est_transit_cost: estTransitCost,
+      est_food_cost: estFoodCost,
+      grand_total_cost: grandTotalCost
+    }
+  };
+}
+
+/* ═══ RUN OPTIMIZER (MULTI-DAY + SPATIAL TSP) ═══ */
 function runOptimize() {
   const btn = document.getElementById('optBtn');
   btn.disabled = true;
   document.getElementById('lbar').classList.add('on');
 
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const maxT = parseInt(document.getElementById('tSlider').value);
-    const maxB = parseInt(document.getElementById('bSlider').value);
+  requestAnimationFrame(() => requestAnimationFrame(async () => {
+    const dailyHours = parseInt(document.getElementById('tSlider').value);
+    const totalBudget = parseInt(document.getElementById('bSlider').value);
     const city = CITIES[activeCity];
-    const pool = city.attractions;
+    const pool = [...city.attractions];
 
-    // Handle Pinned Must-Visit items
-    const pinnedList = [];
-    const unpinnedList = [];
+    const dailyBudget = Math.floor(totalBudget / tripDays);
 
-    pool.forEach(item => {
-      if (pinnedAttractionIds.has(item.id)) {
-        pinnedList.push(item);
-      } else {
-        unpinnedList.push(item);
-      }
-    });
+    if (tripDays === 1) {
+      // Single Day Plan
+      const pinnedList = pool.filter(a => pinnedAttractionIds.has(a.id));
+      const unpinnedList = pool.filter(a => !pinnedAttractionIds.has(a.id));
 
-    let remT = maxT;
-    let remB = maxB;
-    const guaranteedItems = [];
+      let remT = dailyHours;
+      let remB = dailyBudget;
+      const guaranteed = [];
 
-    // Fit as many pinned items as constraints permit
-    pinnedList.forEach(item => {
-      if (item.time <= remT && item.cost <= remB) {
-        guaranteedItems.push(item);
-        remT -= item.time;
-        remB -= item.cost;
-      }
-    });
-
-    // Run 0/1 Knapsack DP on remaining items with remaining constraints
-    const { chosen, totalScore: remScore } = knapsack(unpinnedList, remT, remB);
-    const chosenFromUnpinned = chosen.map(i => unpinnedList[i]);
-
-    // Combine guaranteed + DP-optimized items
-    const picked = [...guaranteedItems, ...chosenFromUnpinned];
-    const pickedIds = new Set(picked.map(a => a.id));
-    const skipped = pool.filter(a => !pickedIds.has(a.id));
-
-    const totalScore = picked.reduce((s, a) => s + a.score, 0);
-    const ticketBudget = picked.reduce((s, a) => s + a.cost, 0);
-    const usedTime = picked.reduce((s, a) => s + a.time, 0);
-
-    // Realistic Timeline: Starts at 9:00 AM, includes transit times and lunch break window
-    let currentMinutes = 9 * 60; // 09:00 AM
-    let hadLunch = false;
-    const scheduled = [];
-
-    for (let i = 0; i < picked.length; i++) {
-      const place = picked[i];
-
-      // Check for mid-day lunch break (around 1:00 PM = 780 mins)
-      if (!hadLunch && currentMinutes >= (13 * 60 - 30) && (currentMinutes + place.time * 60) > (13 * 60 + 45)) {
-        hadLunch = true;
-        const lStartH = Math.floor(currentMinutes / 60);
-        const lStartM = currentMinutes % 60;
-        currentMinutes += 60; // 1 hr lunch
-        const lEndH = Math.floor(currentMinutes / 60);
-        const lEndM = currentMinutes % 60;
-
-        scheduled.push({
-          isLunch: true,
-          title: "Authentic Regional Lunch Break",
-          dish: city.foodRec.dish,
-          area: city.foodRec.area,
-          desc: city.foodRec.desc,
-          start: `${lStartH.toString().padStart(2, '0')}:${lStartM.toString().padStart(2, '0')}`,
-          end: `${lEndH.toString().padStart(2, '0')}:${lEndM.toString().padStart(2, '0')}`
-        });
-      }
-
-      // Transit calculation from previous place
-      let transitInfo = null;
-      if (scheduled.length > 0) {
-        // Find previous real attraction
-        const prevPlaces = scheduled.filter(x => !x.isLunch && !x.isTransit);
-        if (prevPlaces.length > 0) {
-          const prevPlace = prevPlaces[prevPlaces.length - 1];
-          transitInfo = calculateTransit(prevPlace, place);
-          currentMinutes += transitInfo.minutes;
+      pinnedList.forEach(item => {
+        if (item.time <= remT && item.cost <= remB) {
+          guaranteed.push(item);
+          remT -= item.time;
+          remB -= item.cost;
         }
+      });
+
+      const { chosen } = knapsack(unpinnedList, remT, remB);
+      const chosenFromUnpinned = chosen.map(i => unpinnedList[i]);
+      const picked = [...guaranteed, ...chosenFromUnpinned];
+      const pickedIds = new Set(picked.map(a => a.id));
+      const skipped = pool.filter(a => !pickedIds.has(a.id));
+
+      const dayPlan = generateSingleDaySchedule(picked, city, 0);
+      lastResult = {
+        multiDay: false,
+        city,
+        itinerary: dayPlan.itinerary,
+        fullSchedule: dayPlan.fullSchedule,
+        skipped,
+        stats: {
+          ...dayPlan.stats,
+          max_time: dailyHours,
+          max_budget: dailyBudget,
+          cells: dailyHours * Math.floor(dailyBudget / 100)
+        }
+      };
+    } else {
+      // Multi-Day Plan (2 or 3 Days)
+      // Sort attractions by longitude/latitude into spatial clusters
+      const sortedPool = [...pool].sort((a, b) => (a.lat + a.lng) - (b.lat + b.lng));
+      const daysData = [];
+      const usedIds = new Set();
+
+      for (let d = 0; d < tripDays; d++) {
+        const availablePool = sortedPool.filter(a => !usedIds.has(a.id));
+        const dayPinned = availablePool.filter(a => pinnedAttractionIds.has(a.id));
+        const dayUnpinned = availablePool.filter(a => !pinnedAttractionIds.has(a.id));
+
+        let remT = dailyHours;
+        let remB = dailyBudget;
+        const guaranteed = [];
+
+        dayPinned.forEach(item => {
+          if (item.time <= remT && item.cost <= remB) {
+            guaranteed.push(item);
+            remT -= item.time;
+            remB -= item.cost;
+          }
+        });
+
+        const { chosen } = knapsack(dayUnpinned, remT, remB);
+        const chosenFromUnpinned = chosen.map(i => dayUnpinned[i]);
+        const dayPicked = [...guaranteed, ...chosenFromUnpinned];
+
+        dayPicked.forEach(a => usedIds.add(a.id));
+        const daySchedule = generateSingleDaySchedule(dayPicked, city, d);
+        daysData.push(daySchedule);
       }
 
-      const sH = Math.floor(currentMinutes / 60);
-      const sM = currentMinutes % 60;
-      currentMinutes += place.time * 60;
-      const eH = Math.floor(currentMinutes / 60);
-      const eM = currentMinutes % 60;
+      const allItin = daysData.flatMap(d => d.itinerary);
+      const allItinIds = new Set(allItin.map(a => a.id));
+      const skipped = pool.filter(a => !allItinIds.has(a.id));
 
-      scheduled.push({
-        ...place,
-        transitBefore: transitInfo,
-        start: `${sH.toString().padStart(2, '0')}:${sM.toString().padStart(2, '0')}`,
-        end: `${eH.toString().padStart(2, '0')}:${eM.toString().padStart(2, '0')}`
-      });
+      const totalScore = daysData.reduce((s, d) => s + d.stats.score, 0);
+      const totalTime = daysData.reduce((s, d) => s + d.stats.used_time, 0);
+      const totalTicketBudget = daysData.reduce((s, d) => s + d.stats.used_budget, 0);
+      const totalTransitCost = daysData.reduce((s, d) => s + d.stats.est_transit_cost, 0);
+      const totalFoodCost = daysData.reduce((s, d) => s + d.stats.est_food_cost, 0);
+      const grandTotalCost = totalTicketBudget + totalTransitCost + totalFoodCost;
+
+      lastResult = {
+        multiDay: true,
+        daysCount: tripDays,
+        city,
+        days: daysData,
+        itinerary: allItin,
+        fullSchedule: daysData[0].fullSchedule,
+        skipped,
+        stats: {
+          score: totalScore,
+          count: allItin.length,
+          used_time: totalTime,
+          max_time: dailyHours * tripDays,
+          used_budget: totalTicketBudget,
+          max_budget: totalBudget,
+          est_transit_cost: totalTransitCost,
+          est_food_cost: totalFoodCost,
+          grand_total_cost: grandTotalCost,
+          cells: dailyHours * Math.floor(dailyBudget / 100) * tripDays
+        }
+      };
+      activeResultDay = 0;
     }
 
-    // Comprehensive Budget Calculation
-    const realAttractions = scheduled.filter(x => !x.isLunch);
-    const transits = scheduled.filter(x => x.transitBefore);
-    const estTransitCost = transits.reduce((s, x) => s + x.transitBefore.estCost, 0);
-    const estFoodCost = picked.length > 0 ? 450 : 0;
-    const grandTotalBudget = ticketBudget + estTransitCost + estFoodCost;
-
-    const result = {
-      city,
-      itinerary: realAttractions,
-      fullSchedule: scheduled,
-      skipped,
-      stats: {
-        score: totalScore,
-        count: picked.length,
-        used_time: usedTime,
-        max_time: maxT,
-        used_budget: ticketBudget,
-        max_budget: maxB,
-        est_transit_cost: estTransitCost,
-        est_food_cost: estFoodCost,
-        grand_total_cost: grandTotalBudget,
-        cells: maxT * Math.floor(maxB / 100)
-      }
-    };
-    lastResult = result;
     visitedStopIds.clear();
-
-    renderResults(result);
+    renderResults(lastResult);
 
     document.getElementById('miniStatsWrap').style.display = 'block';
-    document.getElementById('msS').textContent = totalScore;
-    document.getElementById('msT').textContent = usedTime + 'h';
-    document.getElementById('msC').textContent = picked.length;
+    document.getElementById('msS').textContent = lastResult.stats.score;
+    document.getElementById('msT').textContent = lastResult.stats.used_time + 'h';
+    document.getElementById('msC').textContent = lastResult.stats.count;
 
     switchTab('results');
-    toast(`✨ Itinerary Ready! ${picked.length} stops planned with transit & breaks.`);
+    toast(`✨ ${tripDays}-Day Itinerary Ready! ${lastResult.stats.count} stops optimized.`);
 
     if (mapI) {
-      updateMap();
+      await updateMap();
     }
 
     btn.disabled = false;
@@ -1522,7 +1791,86 @@ function runOptimize() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   RENDER RESULTS (Itinerary, Transit, Lunch & Export)
+   INTERACTIVE ITINERARY REORDERING & REMOVAL
+═══════════════════════════════════════════════════════ */
+function moveStopUp(dayIdx, stopIdx) {
+  if (!lastResult) return;
+  const targetDay = lastResult.multiDay ? lastResult.days[dayIdx] : lastResult;
+  if (stopIdx <= 0) return;
+
+  const arr = targetDay.itinerary;
+  const temp = arr[stopIdx];
+  arr[stopIdx] = arr[stopIdx - 1];
+  arr[stopIdx - 1] = temp;
+
+  const updatedDay = generateSingleDaySchedule(arr, lastResult.city, dayIdx);
+  if (lastResult.multiDay) {
+    lastResult.days[dayIdx] = updatedDay;
+    lastResult.itinerary = lastResult.days.flatMap(d => d.itinerary);
+  } else {
+    lastResult.itinerary = updatedDay.itinerary;
+    lastResult.fullSchedule = updatedDay.fullSchedule;
+    lastResult.stats = { ...lastResult.stats, ...updatedDay.stats };
+  }
+
+  renderResults(lastResult);
+  if (mapI) updateMap();
+  toast('Updated stop sequence');
+}
+
+function moveStopDown(dayIdx, stopIdx) {
+  if (!lastResult) return;
+  const targetDay = lastResult.multiDay ? lastResult.days[dayIdx] : lastResult;
+  const arr = targetDay.itinerary;
+  if (stopIdx >= arr.length - 1) return;
+
+  const temp = arr[stopIdx];
+  arr[stopIdx] = arr[stopIdx + 1];
+  arr[stopIdx + 1] = temp;
+
+  const updatedDay = generateSingleDaySchedule(arr, lastResult.city, dayIdx);
+  if (lastResult.multiDay) {
+    lastResult.days[dayIdx] = updatedDay;
+    lastResult.itinerary = lastResult.days.flatMap(d => d.itinerary);
+  } else {
+    lastResult.itinerary = updatedDay.itinerary;
+    lastResult.fullSchedule = updatedDay.fullSchedule;
+    lastResult.stats = { ...lastResult.stats, ...updatedDay.stats };
+  }
+
+  renderResults(lastResult);
+  if (mapI) updateMap();
+  toast('Updated stop sequence');
+}
+
+function removeStop(dayIdx, stopIdx) {
+  if (!lastResult) return;
+  const targetDay = lastResult.multiDay ? lastResult.days[dayIdx] : lastResult;
+  const removed = targetDay.itinerary.splice(stopIdx, 1)[0];
+
+  const updatedDay = generateSingleDaySchedule(targetDay.itinerary, lastResult.city, dayIdx);
+  if (lastResult.multiDay) {
+    lastResult.days[dayIdx] = updatedDay;
+    lastResult.itinerary = lastResult.days.flatMap(d => d.itinerary);
+  } else {
+    lastResult.itinerary = updatedDay.itinerary;
+    lastResult.fullSchedule = updatedDay.fullSchedule;
+    lastResult.stats = { ...lastResult.stats, ...updatedDay.stats };
+  }
+
+  renderResults(lastResult);
+  if (mapI) updateMap();
+  toast(`Removed "${removed.name}" from itinerary`);
+}
+
+function switchResultDayTab(dayIdx) {
+  activeResultDay = dayIdx;
+  document.querySelectorAll('.day-tabs-bar .dtab').forEach((b, i) => b.classList.toggle('on', i === dayIdx));
+  document.querySelectorAll('.day-view-panel').forEach((p, i) => p.style.display = i === dayIdx ? 'block' : 'none');
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER RESULTS (Multi-Day Tabs & Reordering Controls)
 ═══════════════════════════════════════════════════════ */
 function renderResults(d) {
   const container = document.getElementById('resArea');
@@ -1532,7 +1880,7 @@ function renderResults(d) {
       <div class="empty">
         <i class="fas fa-exclamation-circle empty-icon"></i>
         <div class="empty-title">No attractions fit your constraints</div>
-        <div class="empty-desc">Try increasing your available time slider (e.g. 8h–12h) or budget in ₹.</div>
+        <div class="empty-desc">Try increasing your available time slider or budget in ${currentCurrency}.</div>
       </div>`;
     return;
   }
@@ -1542,59 +1890,100 @@ function renderResults(d) {
     ? `<button class="save-btn" onclick="saveTrip()"><i class="fas fa-bookmark"></i> Save Trip</button>`
     : `<button class="save-btn" onclick="saveTrip()"><i class="fas fa-bookmark"></i> Save Trip (Guest)</button>`;
 
-  // Build full timeline including transit lines and lunch
-  let stepIdx = 0;
-  const timelineHTML = d.fullSchedule.map(item => {
-    if (item.isLunch) {
+  const days = d.multiDay ? d.days : [d];
+
+  // Build Day Tabs for Multi-Day Trips
+  let dayTabsHTML = '';
+  if (d.multiDay) {
+    dayTabsHTML = `
+      <div class="day-tabs-bar">
+        ${days.map((day, idx) => `
+          <button class="dtab ${idx === activeResultDay ? 'on' : ''}" onclick="switchResultDayTab(${idx})">
+            <i class="fas fa-calendar-day"></i> Day ${idx + 1} (${day.itinerary.length} stops)
+          </button>`).join('')}
+      </div>`;
+  }
+
+  // Render Day Timelines
+  const daysHTML = days.map((day, dayIdx) => {
+    let stepIdx = 0;
+    const schedule = day.fullSchedule || day.itinerary;
+    const itemsHTML = schedule.map((item, itemIdx) => {
+      if (item.isLunch) {
+        return `
+          <div class="itin-lunch">
+            <div class="lunch-time">${item.start}<br><small style="font-size:10px">${item.end}</small></div>
+            <div class="lunch-content">
+              <div class="lunch-title"><i class="fas fa-utensils"></i> ${item.title}</div>
+              <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-top:2px">${item.dish} · <span style="font-weight:500;color:var(--muted)">${item.area}</span></div>
+              <div class="lunch-desc">${item.desc}</div>
+            </div>
+          </div>`;
+      }
+
+      const realIdx = day.itinerary.findIndex(x => x.id === item.id);
+      stepIdx++;
+      const isVisited = visitedStopIds.has(item.id);
+
+      const transitBadge = item.transitBefore ? `
+        <div class="itin-transit">
+          <div class="transit-icon-line"><i class="fas fa-taxi"></i> ${item.transitBefore.minutes} min transit</div>
+          <div class="transit-detail">
+            ${item.transitBefore.distKm} km · via ${item.transitBefore.mode} (est. ${formatCurrency(item.transitBefore.estCost)})
+            <a href="https://www.google.com/maps/dir/?api=1&origin=${item.transitBefore.originLat},${item.transitBefore.originLng}&destination=${item.transitBefore.destLat},${item.transitBefore.destLng}&travelmode=driving"
+               target="_blank" class="gmaps-link"><i class="fas fa-diamond-turn-right"></i> Directions</a>
+          </div>
+        </div>` : '';
+
       return `
-        <div class="itin-lunch">
-          <div class="lunch-time">${item.start}<br><small style="font-size:10px">${item.end}</small></div>
-          <div class="lunch-content">
-            <div class="lunch-title"><i class="fas fa-utensils"></i> ${item.title}</div>
-            <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-top:2px">${item.dish} · <span style="font-weight:500;color:var(--muted)">${item.area}</span></div>
-            <div class="lunch-desc">${item.desc}</div>
+        ${transitBadge}
+        <div class="itin-stop ${isVisited ? 'visited' : ''}" id="itin_stop_${item.id}" onclick="openPP('${activeCity}','${item.id}')">
+          <button class="itin-chk-btn" onclick="event.stopPropagation();toggleVisited('${item.id}')" title="Mark as Visited">
+            <i class="fas fa-check"></i>
+          </button>
+          <div class="itin-time">
+            <div class="itin-ts">${item.start}</div>
+            <div class="itin-te">${item.end}</div>
+          </div>
+          <div class="itin-body">
+            <img class="itin-img" src="${item.img}" alt="${item.name}"
+              onerror="this.src='https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1200&auto=format&fit=crop'">
+            <div style="flex:1">
+              <div class="itin-name">
+                <span style="font-size:11px;color:var(--sf);font-weight:700;margin-right:4px">
+                  ${d.multiDay ? `D${dayIdx + 1}.${stepIdx}` : `#${stepIdx}`}
+                </span> ${item.name}
+              </div>
+              <div class="itin-chips">
+                <span class="chip ct" style="font-size:9px"><i class="far fa-clock"></i>${item.durationHours || item.time}h</span>
+                <span class="chip cc2" style="font-size:9px">${formatCurrency(item.cost)}</span>
+                <span class="chip cs" style="font-size:9px"><i class="fas fa-star"></i>${item.score}</span>
+                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + d.city.name)}"
+                   target="_blank" onclick="event.stopPropagation()" class="gmaps-link">
+                   <i class="fas fa-location-arrow"></i> Google Maps
+                </a>
+              </div>
+            </div>
+            <!-- Stop Reordering Controls -->
+            <div class="itin-ctrls" onclick="event.stopPropagation()">
+              <button class="stop-btn" onclick="moveStopUp(${dayIdx}, ${realIdx})" title="Move Stop Earlier">▲</button>
+              <button class="stop-btn" onclick="moveStopDown(${dayIdx}, ${realIdx})" title="Move Stop Later">▼</button>
+              <button class="stop-btn stop-del-btn" onclick="removeStop(${dayIdx}, ${realIdx})" title="Remove Stop">✕</button>
+            </div>
+          </div>
+          <div class="itin-ring" style="background:conic-gradient(${DAY_COLORS[dayIdx % DAY_COLORS.length]} ${item.score * 3.6}deg,#DDD0BA 0deg)">
+            <span class="itin-ring-num">${item.score}</span>
           </div>
         </div>`;
-    }
-
-    stepIdx++;
-    const isVisited = visitedStopIds.has(item.id);
-    const transitBadge = item.transitBefore ? `
-      <div class="itin-transit">
-        <div class="transit-icon-line"><i class="fas fa-taxi"></i> ${item.transitBefore.minutes} min transit</div>
-        <div class="transit-detail">${item.transitBefore.distKm} km · via ${item.transitBefore.mode} (est. ₹${item.transitBefore.estCost})</div>
-      </div>` : '';
+    }).join('');
 
     return `
-      ${transitBadge}
-      <div class="itin-stop ${isVisited ? 'visited' : ''}" id="itin_stop_${item.id}" onclick="openPP('${activeCity}','${item.id}')">
-        <button class="itin-chk-btn" onclick="event.stopPropagation();toggleVisited('${item.id}')" title="Mark as Visited">
-          <i class="fas fa-check"></i>
-        </button>
-        <div class="itin-time">
-          <div class="itin-ts">${item.start}</div>
-          <div class="itin-te">${item.end}</div>
-        </div>
-        <div class="itin-body">
-          <img class="itin-img" src="${item.img}" alt="${item.name}"
-            onerror="this.src='https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1200&auto=format&fit=crop'">
-          <div style="flex:1">
-            <div class="itin-name">
-              <span style="font-size:11px;color:var(--sf);font-weight:700;margin-right:4px">#${stepIdx}</span> ${item.name}
-            </div>
-            <div class="itin-chips">
-              <span class="chip ct" style="font-size:9px"><i class="far fa-clock"></i>${item.time}h</span>
-              <span class="chip cc2" style="font-size:9px">${inr(item.cost)}</span>
-              <span class="chip cs" style="font-size:9px"><i class="fas fa-star"></i>${item.score}</span>
-              <button onclick="event.stopPropagation();zoomToItinStop(${item.lat},${item.lng})"
-                style="background:none;border:none;color:var(--sf);font-size:10px;font-weight:600;cursor:pointer;margin-left:4px">
-                <i class="fas fa-map-location-dot"></i> View on Map
-              </button>
-            </div>
+      <div class="day-view-panel" id="dayViewPanel_${dayIdx}" style="display:${dayIdx === activeResultDay ? 'block' : 'none'}">
+        <div class="itin">
+          <div class="itin-hd" style="background:${DAY_COLORS[dayIdx % DAY_COLORS.length]}">
+            <i class="fas fa-route"></i> Day ${dayIdx + 1} Plan · Starting 9:00 AM · ${day.itinerary.length} stops planned
           </div>
-        </div>
-        <div class="itin-ring" style="background:conic-gradient(#E8590A ${item.score * 3.6}deg,#DDD0BA 0deg)">
-          <span class="itin-ring-num">${item.score}</span>
+          ${itemsHTML}
         </div>
       </div>`;
   }).join('');
@@ -1602,7 +1991,7 @@ function renderResults(d) {
   container.innerHTML = `
     <div class="res-head">
       <div>
-        <div class="res-city">${d.city.name} Day Itinerary</div>
+        <div class="res-city">${d.city.name} ${d.multiDay ? `${d.daysCount}-Day` : 'Day'} Itinerary</div>
         <div class="res-sub">${d.city.state} · ${d.city.tagline}</div>
       </div>
       <div class="res-actions">
@@ -1627,61 +2016,56 @@ function renderResults(d) {
       </div>
       <div class="stat-card c">
         <div class="stat-lbl">Entry Tickets</div>
-        <div class="stat-val" style="font-size:22px">${inr(stats.used_budget)}</div>
-        <div class="stat-unit">of ${inr(stats.max_budget)} limit</div>
+        <div class="stat-val" style="font-size:22px">${formatCurrency(stats.used_budget)}</div>
+        <div class="stat-unit">of ${formatCurrency(stats.max_budget)} limit</div>
       </div>
       <div class="stat-card d">
         <div class="stat-lbl">Estimated Total</div>
-        <div class="stat-val" style="font-size:22px">${inr(stats.grand_total_cost)}</div>
+        <div class="stat-val" style="font-size:22px">${formatCurrency(stats.grand_total_cost)}</div>
         <div class="stat-unit">incl. transit &amp; food</div>
       </div>
     </div>
 
-    <!-- Realistic Budget Breakdown Card -->
+    <!-- Budget Breakdown Card -->
     <div class="budget-card">
-      <div class="bc-title"><i class="fas fa-wallet"></i> Realistic Budget Estimation (Full Day)</div>
+      <div class="bc-title"><i class="fas fa-wallet"></i> Realistic Budget Estimation (${d.multiDay ? `${d.daysCount} Days` : 'Full Day'})</div>
       <div class="bc-grid">
         <div class="bc-item">
           <div class="bc-lbl"><i class="fas fa-ticket"></i> Monument &amp; Attraction Tickets</div>
-          <div class="bc-val">${inr(stats.used_budget)}</div>
+          <div class="bc-val">${formatCurrency(stats.used_budget)}</div>
           <div class="bc-sub">Actual entrance fees for ${stats.count} places</div>
         </div>
         <div class="bc-item">
           <div class="bc-lbl"><i class="fas fa-taxi"></i> Local Transit (Metro / Autos)</div>
-          <div class="bc-val">~${inr(stats.est_transit_cost)}</div>
+          <div class="bc-val">~${formatCurrency(stats.est_transit_cost)}</div>
           <div class="bc-sub">Point-to-point travel between stops</div>
         </div>
         <div class="bc-item">
           <div class="bc-lbl"><i class="fas fa-bowl-food"></i> Regional Food &amp; Chai</div>
-          <div class="bc-val">~${inr(stats.est_food_cost)}</div>
-          <div class="bc-sub">Mid-day authentic lunch and snacks</div>
+          <div class="bc-val">~${formatCurrency(stats.est_food_cost)}</div>
+          <div class="bc-sub">Authentic lunches and snacks</div>
         </div>
       </div>
     </div>
 
-    <!-- Itinerary Timeline -->
-    <div class="itin">
-      <div class="itin-hd">
-        <i class="fas fa-route"></i> Day Plan · Starting 9:00 AM · Check off stops as you visit
-      </div>
-      ${timelineHTML}
-    </div>
+    <!-- Multi-Day Navigation Tabs & Timelines -->
+    ${dayTabsHTML}
+    ${daysHTML}
 
     <!-- Skipped Items -->
     ${d.skipped.length ? `
       <div class="skip-wrap">
         <div class="skip-title">Excluded by Knapsack (Exceeded Time or Budget Constraints)</div>
-        <div class="skip-list">${d.skipped.map(s => `<span class="skip-chip">${s.name} (${s.time}h · ${inr(s.cost)})</span>`).join('')}</div>
+        <div class="skip-list">${d.skipped.map(s => `<span class="skip-chip">${s.name} (${s.time}h · ${formatCurrency(s.cost)})</span>`).join('')}</div>
       </div>` : ''}
 
     <!-- Algorithm Trace -->
     <div class="dp-panel">
-      <div class="dp-title"><i class="fas fa-code"></i> Algorithm Trace — 0/1 Knapsack Dynamic Programming</div>
+      <div class="dp-title"><i class="fas fa-code"></i> Algorithm Trace — 0/1 Knapsack Dynamic Programming + Spatial TSP</div>
       <span class="dh">dp[${stats.max_time}h][${Math.floor(stats.max_budget / 100)} cells]</span> = <span class="dh2">${stats.score} pts — mathematically guaranteed optimal</span><br>
       Attractions evaluated: <span class="dh">${d.itinerary.length + d.skipped.length}</span> across ${d.city.name}<br>
-      DP Matrix Dimension: <span class="dh">${stats.max_time} × ${Math.floor(stats.max_budget / 100)} = ${stats.cells.toLocaleString('en-IN')}</span> subproblems solved<br>
-      State Recurrence: <span class="dh2">dp[t][b] = max(dp[t][b], dp[t − tᵢ][b − bᵢ] + scoreᵢ)</span><br>
-      Trackback recovered in <span class="dh">O(n)</span> steps · ₹100 granularity budget cell
+      Routing: <span class="dh2">OSRM Turn-by-Turn Road Engine</span> with Google Maps navigation links<br>
+      Pace Mode: <span class="dh">${travelPace.toUpperCase()}</span> · ₹100 granularity budget cell
     </div>`;
 }
 
@@ -1698,7 +2082,6 @@ function toggleVisited(id) {
     el.classList.toggle('visited', visitedStopIds.has(id));
   }
 
-  // Check if all are visited
   if (lastResult && visitedStopIds.size === lastResult.itinerary.length) {
     toast('🎉 Congratulations! You completed your entire Yatra!');
   }
@@ -1725,8 +2108,8 @@ function exportCalendar() {
   ];
 
   lastResult.itinerary.forEach((item, idx) => {
-    const sClean = item.start.replace(':', '') + '00';
-    const eClean = item.end.replace(':', '') + '00';
+    const sClean = (item.start || "09:00").replace(':', '') + '00';
+    const eClean = (item.end || "11:00").replace(':', '') + '00';
     icsLines.push(
       "BEGIN:VEVENT",
       `UID:yatra-${item.id}-${Date.now()}@yatraapp.io`,
@@ -1756,15 +2139,14 @@ function exportCalendar() {
 
 function shareItinerary() {
   if (!lastResult || !lastResult.itinerary.length) return;
-  const stops = lastResult.itinerary.map((a, i) => `${i + 1}. ${a.name} (${a.start} - ${a.end})`).join('\n');
-  const text = `🌍 My ${lastResult.city.name} Yatra Itinerary:\n\n${stops}\n\nTotal Time: ${lastResult.stats.used_time}h | Budget: ₹${lastResult.stats.used_budget} | DP Score: ${lastResult.stats.score}\n\nPlanned with YatraApp!`;
+  const stops = lastResult.itinerary.map((a, i) => `${i + 1}. ${a.name} (${a.start || ''} - ${a.end || ''})`).join('\n');
+  const text = `🌍 My ${lastResult.city.name} Yatra Itinerary:\n\n${stops}\n\nTotal Time: ${lastResult.stats.used_time}h | Budget: ${formatCurrency(lastResult.stats.used_budget)} | DP Score: ${lastResult.stats.score}\n\nPlanned with YatraApp!`;
 
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text);
     toast('📋 Trip summary copied to clipboard!');
   }
 
-  // Open WhatsApp share option if available
   const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
   window.open(waUrl, '_blank');
 }
@@ -1789,6 +2171,7 @@ function saveTrip() {
     grandTotal: lastResult.stats.grand_total_cost,
     time: lastResult.stats.used_time,
     count: lastResult.stats.count,
+    multiDay: lastResult.multiDay,
     createdAt: Date.now()
   };
 
@@ -1817,8 +2200,8 @@ function loadTrips() {
     <div class="trip-card" onclick="reopenSavedTrip(${t.id})" style="cursor:pointer">
       <div class="trip-icon">${CITY_FLAGS[t.city] || '📍'}</div>
       <div style="flex:1">
-        <div class="trip-name">${t.cityName} Yatra</div>
-        <div class="trip-meta">${t.time}h · ${inr(t.budget)} · ${t.count} stops · ${new Date(t.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+        <div class="trip-name">${t.cityName} ${t.multiDay ? 'Multi-Day ' : ''}Yatra</div>
+        <div class="trip-meta">${t.time}h · ${formatCurrency(t.budget)} · ${t.count} stops · ${new Date(t.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
         <div style="font-size:11px;color:var(--sf);margin-top:3px;font-weight:600"><i class="fas fa-folder-open"></i> Click to view full itinerary</div>
       </div>
       <div class="trip-score">${t.score}</div>
@@ -1841,10 +2224,10 @@ function reopenSavedTrip(id) {
   if (found.fullResult) {
     lastResult = found.fullResult;
   } else {
-    // Recreate result from saved names
     const city = CITIES[found.city];
     const picked = city.attractions.filter(a => found.attractions.includes(a.name));
     lastResult = {
+      multiDay: false,
       city,
       itinerary: picked,
       fullSchedule: picked,
@@ -1915,13 +2298,11 @@ window.addEventListener('DOMContentLoaded', () => {
   if (user) setUser(user);
   showHero();
 
-  // Load saved theme
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'dark') {
     document.body.classList.add('dark');
   }
 
-  // Close gate on backdrop click
   const gateOv = document.getElementById('gateOv');
   if (gateOv) {
     gateOv.addEventListener('click', e => {
@@ -1933,6 +2314,20 @@ window.addEventListener('DOMContentLoaded', () => {
   if (profOv) {
     profOv.addEventListener('click', e => {
       if (e.target === profOv) closeProfile();
+    });
+  }
+
+  const addPlaceOv = document.getElementById('addPlaceOv');
+  if (addPlaceOv) {
+    addPlaceOv.addEventListener('click', e => {
+      if (e.target === addPlaceOv) closeAddPlaceModal();
+    });
+  }
+
+  const safetyOv = document.getElementById('safetyOv');
+  if (safetyOv) {
+    safetyOv.addEventListener('click', e => {
+      if (e.target === safetyOv) closeSafetyModal();
     });
   }
 });
