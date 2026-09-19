@@ -89,7 +89,7 @@ Users get:
 
 - 🍱 **Mid-Day Authentic Lunch Windows**  
   Schedules an authentic culinary lunch break (1:00 PM – 2:00 PM) featuring iconic regional dishes (e.g., Parathe Wali Gali in Delhi, Dal Baati in Jaipur, Sadya in Kerala, Goan Fish Curry).
-
+  
 - 💰 **Comprehensive Budget Breakdown**  
   Detailed estimation covering:
   - Monument & attraction entrance tickets
