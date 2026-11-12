@@ -8,7 +8,7 @@ https://ggthedeveloper.github.io/YatraApp-Trip-Planner/
 
 ---
 
-## 🧠 Algorithm & Optimization Approach
+## 🧠 Algorithm & Optimization Approach:
 
 YatraApp uses a **smart optimization technique** to generate the best travel itinerary based on user constraints.
 
