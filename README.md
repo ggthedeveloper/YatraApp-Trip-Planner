@@ -179,11 +179,4 @@ YatraApp-Trip-Planner/
 
 This project is open-source and available under the **MIT License**.
 
----
-
-## ⭐ Support
-
-If you like this project:
-- ⭐ Star the repo  
-- 🍴 Fork it  
-- 🛠️ Contribute improvements  
+---  
